@@ -81,10 +81,11 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
         .map { case (n, group) => (n, group.map(_.createDate).max) }
         .join(processVersionsTable)
         .on { case (((processId, latestVersionDate)), processVersion) => processVersion.processId === processId && processVersion.createDate === latestVersionDate }
-        .join(processTableFilteredByUser.filter(query))
+        .join(processTableFilteredByUser)
         .on { case ((_, latestVersion), process) => latestVersion.processId === process.id }
         .joinLeft(latestDeployedProcessesVersionsPerEnvironment)
         .on { case ((_, process), (processId, deploymentInfo)) => process.id === processId}
+        .filter { case (((_, _), process), _) => query(process)}
         .result
     } yield
       latestProcesses.map { case (((_, processVersion), process), deploymentWithId) =>
