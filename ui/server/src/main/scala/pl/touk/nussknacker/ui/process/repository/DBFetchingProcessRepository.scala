@@ -21,6 +21,7 @@ import pl.touk.nussknacker.restmodel.processdetails._
 import pl.touk.nussknacker.ui.app.BuildInfo
 import pl.touk.nussknacker.ui.db.entity._
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessNotFoundError
+import slick.lifted.QueryBase
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
@@ -82,17 +83,16 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
         .on { case (((processId, latestVersionDate)), processVersion) => processVersion.processId === processId && processVersion.createDate === latestVersionDate }
         .join(processTableFilteredByUser.filter(query))
         .on { case ((_, latestVersion), process) => latestVersion.processId === process.id }
+        .joinLeft(latestDeployedProcessesVersionsPerEnvironment)
+        .on { case ((_, process), (processId, deploymentInfo)) => process.id === processId}
         .result
-
-      deployedPerEnv <- latestDeployedProcessesVersionsPerEnvironment.result
-
     } yield
-      latestProcesses.map { case ((_, processVersion), process) =>
+      latestProcesses.map { case (((_, processVersion), process), deploymentWithId) =>
         createFullDetails(
           process,
           processVersion,
           isLatestVersion = true,
-          currentlyDeployedAt = deployedPerEnv.filter(_._1 == process.id).map(_._2),
+          currentlyDeployedAt = deploymentWithId.map(_._2).toList,
           tags = tagsForProcesses(process.id),
           history = List.empty,
           businessView = false,
