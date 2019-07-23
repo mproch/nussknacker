@@ -607,7 +607,8 @@ lazy val argonautUtils = (project in engine("argonautUtils")).
         "io.argonaut" %% "argonaut" % argonautV,
         "com.github.alexarchambault" %% s"argonaut-shapeless_$argonautMajorV" % argonautShapelessV,
         "com.typesafe.akka" %% "akka-http" % akkaHttpV force(),
-        "com.fasterxml.jackson.core" % "jackson-databind" % "2.9.2"
+        "com.fasterxml.jackson.core" % "jackson-databind" % "2.9.2",
+        "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
     }
   )

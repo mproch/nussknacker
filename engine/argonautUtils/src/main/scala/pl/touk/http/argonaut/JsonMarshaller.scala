@@ -1,5 +1,7 @@
 package pl.touk.http.argonaut
 
+import java.nio.charset.StandardCharsets
+
 import argonaut.{Json, JsonBigDecimal, JsonDecimal, JsonLong}
 import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
 import com.fasterxml.jackson.databind.node.{ArrayNode, BooleanNode, DecimalNode, JsonNodeFactory, LongNode, NullNode, ObjectNode, TextNode}
@@ -26,7 +28,7 @@ trait JsonMarshaller {
 
 object ArgonautJsonMarshaller extends JsonMarshaller {
 
-  override def marshall(json: Json): Array[Byte] = marshallToString(json).getBytes
+  override def marshall(json: Json): Array[Byte] = marshallToString(json).getBytes(StandardCharsets.UTF_8)
 
   override def marshallToString(json: Json): String = json.nospaces
 
@@ -39,8 +41,9 @@ object JacksonJsonMarshaller extends JsonMarshaller {
   //TODO: configuration?
   private val om = new ObjectMapper()
 
-  override def marshallToString(json: Json): String = new String(marshall(json))
+  override def marshallToString(json: Json): String = new String(marshall(json), StandardCharsets.UTF_8)
 
+  //this always encodes as UTF_8
   override def marshall(json: Json): Array[Byte] = om.writeValueAsBytes(convertToJackson(json))
 
   def convertToJackson(json: Json): JsonNode = {
