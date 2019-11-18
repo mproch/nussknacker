@@ -1,22 +1,25 @@
 package pl.touk.nussknacker.engine.sql
 
-import java.sql.SQLSyntaxErrorException
+import java.sql.{SQLException, SQLSyntaxErrorException}
 
 import cats.data.Validated._
 import cats.data._
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.expression.{Expression, ExpressionParseError, ExpressionParser, ExpressionTypingInfo, TypedExpression, ValueWithLazyContext}
+import pl.touk.nussknacker.engine.api.expression._
 import pl.touk.nussknacker.engine.api.lazyy.LazyValuesProvider
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
-import pl.touk.nussknacker.engine.api.typed.{ClazzRef, TypedMap, typing}
+import pl.touk.nussknacker.engine.api.typed.TypedMap
+import pl.touk.nussknacker.engine.api.typed.typing.{TypedClass, TypingResult}
 import pl.touk.nussknacker.engine.sql.columnmodel.CreateColumnModel
-import pl.touk.nussknacker.engine.sql.preparevalues.{PrepareTables, ReadObjectField}
+import pl.touk.nussknacker.engine.sql.preparevalues.PrepareTables
 
 import scala.collection.JavaConverters._
 import scala.concurrent.Future
 
 object SqlExpressionParser extends ExpressionParser {
+
+  private val sqlQueryableDataBaseFactory = CalciteQueryableDataBase
+                                            //HsqlSqlQueryableDataBaseFactory
 
   override val languageId: String = "sql"
 
@@ -45,17 +48,18 @@ object SqlExpressionParser extends ExpressionParser {
                                colModel: Map[String, ColumnModel],
                                typingResult: TypingResult): TypedExpression = {
 
-    val expression = new SqlExpression(original = original, columnModels = colModel)
+    val expression = new SqlExpression(original = original, columnModels = colModel, sqlQueryableDataBaseFactory = sqlQueryableDataBaseFactory)
     val listResult = TypedClass(classOf[List[_]], List(typingResult))
     TypedExpression(expression, listResult, SqlExpressionTypingInfo)
   }
 
   private def getQueryReturnType(original: String, colModel: Map[String, ColumnModel]): Validated[NonEmptyList[ExpressionParseError], TypingResult] = {
-    val db = new HsqlSqlQueryableDataBase(original, colModel)
+    val db = sqlQueryableDataBaseFactory.create(original, colModel)
     try {
       Validated.Valid(db.getTypingResult)
     } catch {
-      case e: SQLSyntaxErrorException =>
+      case e: SQLException =>
+        //e.printStackTrace()
         Validated.Invalid(NonEmptyList(ExpressionParseError(e.getMessage), Nil))
     } finally {
       db.close()
@@ -71,7 +75,8 @@ case class SqlExpressEvaluationException(notAListExceptions :NonEmptyList[Prepar
   extends IllegalArgumentException(notAListExceptions.toString())
 
 class SqlExpression(private[sql] val columnModels: Map[String, ColumnModel],
-                     val original: String) extends Expression {
+                    sqlQueryableDataBaseFactory: SqlQueryableDataBaseFactory,
+                    val original: String) extends Expression {
 
   override val language: String = SqlExpressionParser.languageId
   
@@ -97,7 +102,7 @@ class SqlExpression(private[sql] val columnModels: Map[String, ColumnModel],
   }
 
   private def newDatabase(): SqlQueryableDataBase = synchronized {
-    new HsqlSqlQueryableDataBase(original, columnModels)
+    sqlQueryableDataBaseFactory.create(original, columnModels)
   }
 
   override def evaluate[T](ctx: Context, lazyValuesProvider: LazyValuesProvider): Future[ValueWithLazyContext[T]] = {

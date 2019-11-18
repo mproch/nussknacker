@@ -400,6 +400,7 @@ lazy val interpreter = (project in engine("interpreter")).
         //needed by scala-compiler for spring-expression...
         "com.google.code.findbugs" % "jsr305" % "3.0.2",
         "org.hsqldb" % "hsqldb" % hsqldbV,
+        "org.apache.calcite" % "calcite-core" % "1.21.0",
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
         "org.scalacheck" %% "scalacheck" % scalaCheckV % "test"
       )

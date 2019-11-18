@@ -108,6 +108,12 @@ class HsqlSqlQueryableDataBase(query: String, tables: Map[String, ColumnModel]) 
   }
 }
 
+object HsqlSqlQueryableDataBaseFactory extends SqlQueryableDataBaseFactory {
+
+  override def create(query: String, tables: Map[String, ColumnModel]): SqlQueryableDataBase = new HsqlSqlQueryableDataBase(query, tables)
+
+}
+
 
 private object HsqlSqlQueryableDataBase extends LazyLogging {
   import SqlType._

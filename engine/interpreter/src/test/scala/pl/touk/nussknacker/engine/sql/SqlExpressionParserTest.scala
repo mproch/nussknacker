@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 
 class SqlExpressionParserTest extends FunSuite with Matchers {
 
-
   val validationCtx = ValidationContext(Map(
     "table1" -> TypedList(Map("col1" -> Typed[String])),
     "table1a" -> TypedList(Map("col1" -> Typed[Long])),
@@ -19,6 +18,7 @@ class SqlExpressionParserTest extends FunSuite with Matchers {
   test("valid query") {
     SqlExpressionParser.parse("select * from table1", validationCtx, Unknown) shouldBe a[Valid[_]]
   }
+
   test("query with unexisting table variable should invalidates") {
     SqlExpressionParser.parse("select * from unicorn", validationCtx, Unknown) shouldBe a[Invalid[_]]
   }
