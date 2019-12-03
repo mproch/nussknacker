@@ -30,6 +30,10 @@ val dockerUpLatest = System.getProperty("dockerUpLatest", "true").toBoolean
 publishTo := Some(Resolver.defaultLocal)
 crossScalaVersions := Nil
 
+
+//have some problems with force() - e.g. with forcing circe version in httpUtils...
+ThisBuild / useCoursier := false
+
 val publishSettings = Seq(
   publishMavenStyle := true,
   releasePublishArtifactsAction := PgpKeys.publishSigned.value,
@@ -390,7 +394,7 @@ lazy val process = (project in engine("flink/process")).
         "org.apache.flink" %% "flink-table-api-scala-bridge" % flinkV % "provided",
         "org.apache.flink" %% "flink-table-planner-blink" % flinkV % "provided",
         "org.apache.flink" %% "flink-runtime" % flinkV % "provided",
-        "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV
+        "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV % "provided"
       )
     }
   ).dependsOn(flinkApi, flinkUtil, interpreter, kafka % "test", kafkaTestUtil % "test", kafkaFlinkUtil % "test", flinkTestUtil % "test")
@@ -429,7 +433,7 @@ lazy val kafka = (project in engine("kafka")).
     libraryDependencies ++= {
       Seq(
         "org.apache.kafka" % "kafka-clients" % kafkaV,
-        "org.scalatest" %% "scalatest" % scalaTestV
+        "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
     }
   ).
@@ -688,14 +692,15 @@ lazy val restmodel = (project in file("ui/restmodel"))
       "io.circe" %% "circe-java8" % circeV
     )
   )
-  .dependsOn(api, interpreter, security, testUtil % "test")
+  .dependsOn(api, interpreter, testUtil % "test")
 
 lazy val listenerApi = (project in file("ui/listener-api"))
   .settings(commonSettings)
   .settings(
     name := "nussknacker-listener-api",
   )
-  .dependsOn(restmodel, api, util, testUtil % "test")
+  //security needed for LoggedUser etc
+  .dependsOn(restmodel, api, util, security, testUtil % "test")
 
 lazy val ui = (project in file("ui/server"))
   .configs(SlowTests)
