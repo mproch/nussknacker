@@ -387,6 +387,8 @@ lazy val process = (project in engine("flink/process")).
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
+        "org.apache.flink" %% "flink-table-api-scala-bridge" % flinkV % "provided",
+        "org.apache.flink" %% "flink-table-planner-blink" % flinkV % "provided",
         "org.apache.flink" %% "flink-runtime" % flinkV % "provided",
         "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV
       )
