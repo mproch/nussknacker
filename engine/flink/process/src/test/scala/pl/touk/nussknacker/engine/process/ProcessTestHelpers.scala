@@ -9,11 +9,15 @@ import io.circe.generic.JsonCodec
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.functions.FilterFunction
 import org.apache.flink.configuration.Configuration
-import org.apache.flink.streaming.api.functions.TimestampAssigner
+import org.apache.flink.streaming.api.functions.{KeyedProcessFunction, ProcessFunction, TimestampAssigner}
 import org.apache.flink.streaming.api.functions.co.RichCoMapFunction
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor
+import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, BoundedOneInput, OneInputStreamOperator}
 import org.apache.flink.streaming.api.scala._
+import org.apache.flink.streaming.runtime.io.StreamOneInputProcessor
+import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
+import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.dict.DictInstance
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
@@ -21,7 +25,8 @@ import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
-import pl.touk.nussknacker.engine.api.{LazyParameter, _}
+import pl.touk.nussknacker.engine.api.{Context, LazyParameter, _}
+import pl.touk.nussknacker.engine.api.{Context => NKContext}
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
@@ -29,6 +34,8 @@ import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.process.compiler.FlinkStreamingProcessCompiler
 
+import scala.collection.immutable.TreeMap
+import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
 
 object ProcessTestHelpers {
@@ -89,7 +96,8 @@ object ProcessTestHelpers {
         "customFilterContextTransformation" -> WithCategories(CustomFilterContextTransformation),
         "customContextClear" -> WithCategories(CustomContextClear),
         "sampleJoin" -> WithCategories(CustomJoin),
-        "joinBranchExpression" -> WithCategories(CustomJoinUsingBranchExpressions)
+        "joinBranchExpression" -> WithCategories(CustomJoinUsingBranchExpressions),
+        "customSort" -> WithCategories(CustomSort)
       )
 
       override def listeners(config: Config) = List()
@@ -197,6 +205,49 @@ object ProcessTestHelpers {
           .map(_ => ValueWithContext[Any](null, Context("new")))
     })
 
+  }
+
+  object CustomSort extends CustomStreamTransformer {
+    @MethodToInvoke(returnType = classOf[Void])
+    def execute(@ParamName("sortBy") sortBy: LazyParameter[String]): FlinkCustomStreamTransformation =
+      FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
+        start
+          .global
+          .transform("", new CustomSortFunction(sortBy, context.lazyParameterHelper))
+    })
+  }
+
+  class CustomSortFunction(sortBy: LazyParameter[String], lazyParameterHelper: FlinkLazyParameterFunctionHelper)
+    extends AbstractStreamOperator[ValueWithContext[Any]] with BoundedOneInput
+      with OneInputStreamOperator[Context, ValueWithContext[Any]] {
+
+    @transient private lazy val state: mutable.TreeMap[String, NKContext] = mutable.TreeMap.empty[String, NKContext]
+
+    private var lazyParameterInterpreter: LazyParameterInterpreter = _
+
+    private var sortByEvaluate: Context => String = _
+
+    override def open(): Unit = {
+      super.open()
+      lazyParameterInterpreter = lazyParameterHelper.createInterpreter(getRuntimeContext)
+      sortByEvaluate = lazyParameterInterpreter.syncInterpretationFunction(sortBy)
+    }
+
+    override def close(): Unit = {
+      super.close()
+      lazyParameterInterpreter.close()
+    }
+
+    override def processElement(element: StreamRecord[NKContext]): Unit = {
+       state += (sortByEvaluate(element.getValue) -> element.getValue)
+    }
+
+    override def endInput(): Unit = {
+      state.foreach {
+        case (_, value) => output.collect(new StreamRecord[ValueWithContext[Any]](ValueWithContext(null, value)))
+      }
+
+    }
   }
 
   object CustomJoin extends CustomStreamTransformer {
