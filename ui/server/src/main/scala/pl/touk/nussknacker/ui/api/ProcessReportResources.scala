@@ -10,7 +10,7 @@ import io.circe.syntax._
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
-import pl.touk.nussknacker.ui.processreport.{ProcessCounter, RawCount}
+import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.DateUtils
 import pl.touk.nussknacker.processCounts._
@@ -62,9 +62,9 @@ class ProcessReportResources(countsReporter: CountsReporter, processCounter: Pro
   }
 
 
-  private def computeFinalCounts(displayable: DisplayableProcess, nodeCountFunction: String => Option[Long]) : ToResponseMarshallable = {
+  private def computeFinalCounts(displayable: DisplayableProcess, nodeCountFunction: String => Option[RawCount]) : ToResponseMarshallable = {
     val computedCounts = processCounter.computeCounts(ProcessConverter.fromDisplayable(displayable),
-      nodeId => nodeCountFunction(nodeId).map(count => RawCount(count, 0)))
+      nodeId => nodeCountFunction(nodeId))
     computedCounts.asJson
   }
 

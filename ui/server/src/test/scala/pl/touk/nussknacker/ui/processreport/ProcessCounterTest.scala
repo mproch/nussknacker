@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.node.{Filter, SubprocessInputDefinition, SubprocessOutputDefinition}
 import pl.touk.nussknacker.engine.spel
+import pl.touk.nussknacker.processCounts.RawCount
 import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessRepository}
 
 //numbers & processes in this test can be totaly uncorrect and unrealistic, as processCounter does not care
@@ -83,7 +84,7 @@ class ProcessCounterTest extends FlatSpec with Matchers {
     computed shouldBe Map(
       "source1" -> NodeCount(70, 0),
       "filter1" -> NodeCount(60, 1),
-      "sub1" -> NodeCount(55, 2
+      "sub1" -> NodeCount(55, 2, None
         , Map(
           "subInput1" -> NodeCount(55, 2),
           "subFilter1" -> NodeCount(45, 4),

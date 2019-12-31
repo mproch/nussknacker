@@ -17,9 +17,11 @@ class InfluxCountsReporter(env: String, config: InfluxConfig)(implicit backend: 
 
   private val influxBaseReporter = new InfluxBaseCountsReporter(env, config)
 
-  override def prepareRawCounts(processId: String, countsRequest: CountsRequest)(implicit ec: ExecutionContext): Future[String => Option[Long]] = countsRequest match {
-    case RangeCount(fromDate, toDate) => prepareRangeCounts(processId, fromDate, toDate)
-    case ExecutionCount(pointInTime) => queryInflux(processId, None, pointInTime)
+  override def prepareRawCounts(processId: String, countsRequest: CountsRequest)(implicit ec: ExecutionContext): Future[String => Option[RawCount]] = {
+    (countsRequest match {
+      case RangeCount(fromDate, toDate) => prepareRangeCounts(processId, fromDate, toDate)
+      case ExecutionCount(pointInTime) => queryInflux(processId, None, pointInTime)
+    }).map(_.andThen(_.map(total => RawCount(total, 0, None))))
   }
 
   private def prepareRangeCounts(processId: String, fromDate: LocalDateTime, toDate: LocalDateTime)(implicit ec: ExecutionContext): Future[String => Option[Long]] = {

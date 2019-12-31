@@ -20,6 +20,7 @@ import pl.touk.nussknacker.engine.api.DisplayJson
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
+import pl.touk.nussknacker.processCounts.RawCount
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
@@ -27,7 +28,7 @@ import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.process.deployment.{Cancel, Deploy, Snapshot, Test}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
-import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
+import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 
@@ -227,7 +228,7 @@ class ManagementResources(processCounter: ProcessCounter,
 
   private def computeCounts(canonical: CanonicalProcess, results: TestResults[_]) : Map[String, NodeCount] = {
     val counts = results.nodeResults.map { case (key, nresults) =>
-      key -> RawCount(nresults.size.toLong, results.exceptions.find(_.nodeId.contains(key)).size.toLong)
+      key -> RawCount(nresults.size.toLong, results.exceptions.find(_.nodeId.contains(key)).size.toLong, None)
     }
     processCounter.computeCounts(canonical, counts.get)
   }

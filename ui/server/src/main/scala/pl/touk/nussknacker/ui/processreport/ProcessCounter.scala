@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.api.ProcessAdditionalFields
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition
+import pl.touk.nussknacker.processCounts.RawCount
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessRepository
 import shapeless.syntax.typeable._
 
@@ -22,8 +23,8 @@ class ProcessCounter(subprocessRepository: SubprocessRepository) {
 
       def nodeCountOption(id: Option[String], subprocessCounts: Map[String, NodeCount] = Map()) : NodeCount = {
         val countId = (prefixes ++ id).mkString("-")
-        val count = counts(countId).getOrElse(RawCount(0L, 0L))
-        NodeCount(count.all, count.errors, subprocessCounts)
+        val count = counts(countId).getOrElse(RawCount(0L, 0L, None))
+        NodeCount(count.all, count.errors, count.additionalInfo, subprocessCounts)
       }
 
       nodes.flatMap {
@@ -63,12 +64,13 @@ class ProcessCounter(subprocessRepository: SubprocessRepository) {
       val valuesForGroup = valuesWithoutGroups.filterKeys(nodeId => group.nodes.contains(nodeId))
       val all = valuesForGroup.values.map(_.all).max
       val errors = valuesForGroup.values.map(_.errors).max
-      group.id -> NodeCount(all, errors)
+      //TODO:??
+      group.id -> NodeCount(all, errors, None)
     }.toMap
   }
 }
 
-
-case class RawCount(all: Long, errors: Long)
-
-@JsonCodec case class NodeCount(all: Long, errors: Long, subprocessCounts: Map[String, NodeCount] = Map())
+@JsonCodec case class NodeCount(all: Long,
+                                errors: Long,
+                                additionalInfo: Option[String] = None,
+                                subprocessCounts: Map[String, NodeCount] = Map())

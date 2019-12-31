@@ -23,9 +23,12 @@ trait CountsReporterCreator {
 
 trait CountsReporter {
 
-  def prepareRawCounts(processId: String, countsRequest: CountsRequest)(implicit ec: ExecutionContext): Future[String => Option[Long]]
+  //pass data about process node itself
+  def prepareRawCounts(processId: String, countsRequest: CountsRequest)(implicit ec: ExecutionContext): Future[String => Option[RawCount]]
 
 }
+
+case class RawCount(all: Long, errors: Long, additionalInfo: Option[String] = None)
 
 case class CannotFetchCountsError(msg: String) extends Exception(msg)
 
