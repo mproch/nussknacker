@@ -657,7 +657,7 @@ lazy val processReports = (project in engine("processReports")).
         "com.iheart" %% "ficus" % ficusV
       )
     }
-  ).dependsOn(httpUtils, testUtil % "test")
+  ).dependsOn(httpUtils, testUtil % "test", interpreter)
 
 lazy val httpUtils = (project in engine("httpUtils")).
   settings(commonSettings).

@@ -62,9 +62,8 @@ class ProcessReportResources(countsReporter: CountsReporter, processCounter: Pro
   }
 
 
-  private def computeFinalCounts(displayable: DisplayableProcess, nodeCountFunction: String => Option[RawCount]) : ToResponseMarshallable = {
-    val computedCounts = processCounter.computeCounts(ProcessConverter.fromDisplayable(displayable),
-      nodeId => nodeCountFunction(nodeId))
+  private def computeFinalCounts(displayable: DisplayableProcess, nodeCountFunction: CountsForProcess) : ToResponseMarshallable = {
+    val computedCounts = processCounter.computeCounts(ProcessConverter.fromDisplayable(displayable), nodeCountFunction)
     computedCounts.asJson
   }
 

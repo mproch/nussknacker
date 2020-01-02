@@ -7,6 +7,7 @@ import sttp.client.{NothingT, SttpBackend}
 import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
 import com.typesafe.config.Config
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
+import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.processCounts._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -17,11 +18,16 @@ class InfluxCountsReporter(env: String, config: InfluxConfig)(implicit backend: 
 
   private val influxBaseReporter = new InfluxBaseCountsReporter(env, config)
 
-  override def prepareRawCounts(processId: String, countsRequest: CountsRequest)(implicit ec: ExecutionContext): Future[String => Option[RawCount]] = {
+  override def prepareRawCounts(processId: String, countsRequest: CountsRequest)(implicit ec: ExecutionContext): Future[CountsForProcess] = {
     (countsRequest match {
       case RangeCount(fromDate, toDate) => prepareRangeCounts(processId, fromDate, toDate)
       case ExecutionCount(pointInTime) => queryInflux(processId, None, pointInTime)
-    }).map(_.andThen(_.map(total => RawCount(total, 0, None))))
+    }).map { fun =>
+      new CountsForProcess {
+        override def countsForNode(id: String, nodeData: node.NodeData): Option[RawCount] =
+          fun(id).map(RawCount(_, 0, None))
+      }
+    }
   }
 
   private def prepareRangeCounts(processId: String, fromDate: LocalDateTime, toDate: LocalDateTime)(implicit ec: ExecutionContext): Future[String => Option[Long]] = {

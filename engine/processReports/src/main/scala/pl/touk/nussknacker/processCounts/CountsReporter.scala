@@ -3,6 +3,7 @@ package pl.touk.nussknacker.processCounts
 import java.time.LocalDateTime
 
 import com.typesafe.config.Config
+import pl.touk.nussknacker.engine.graph.node.NodeData
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -23,8 +24,13 @@ trait CountsReporterCreator {
 
 trait CountsReporter {
 
-  //pass data about process node itself
-  def prepareRawCounts(processId: String, countsRequest: CountsRequest)(implicit ec: ExecutionContext): Future[String => Option[RawCount]]
+  def prepareRawCounts(processId: String, countsRequest: CountsRequest)(implicit ec: ExecutionContext): Future[CountsForProcess]
+
+}
+
+trait CountsForProcess {
+
+  def countsForNode(id: String, nodeData: NodeData): Option[RawCount]
 
 }
 

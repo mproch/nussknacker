@@ -6,9 +6,10 @@ import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
+import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.{Filter, SubprocessInputDefinition, SubprocessOutputDefinition}
 import pl.touk.nussknacker.engine.spel
-import pl.touk.nussknacker.processCounts.RawCount
+import pl.touk.nussknacker.processCounts.{CountsForProcess, RawCount}
 import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessRepository}
 
 //numbers & processes in this test can be totaly uncorrect and unrealistic, as processCounter does not care
@@ -16,6 +17,10 @@ import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessR
 class ProcessCounterTest extends FlatSpec with Matchers {
 
   import spel.Implicits._
+
+  case class MapBasedCounts(value: Map[String, RawCount]) extends CountsForProcess {
+    override def countsForNode(id: String, nodeData: node.NodeData): Option[RawCount] = value.get(id)
+  }
 
   it should "compute counts for simple process" in {
     val process = ProcessCanonizer.canonize(EspProcessBuilder
@@ -25,8 +30,8 @@ class ProcessCounterTest extends FlatSpec with Matchers {
       .emptySink("sink11", ""))
     val counter = new ProcessCounter(subprocessRepository(Set()))
 
-    val computed = counter.computeCounts(process, Map("source1" -> RawCount(30L, 5L),
-      "filter1" -> RawCount(20, 10)).get)
+    val computed = counter.computeCounts(process, MapBasedCounts(Map("source1" -> RawCount(30L, 5L),
+      "filter1" -> RawCount(20, 10))))
 
     computed shouldBe Map(
       "source1" -> NodeCount(30, 5),
@@ -40,12 +45,12 @@ class ProcessCounterTest extends FlatSpec with Matchers {
       .id("test").parallelism(1).exceptionHandler()
       .source("source1", "")
       .filter("filter1", "")
-      .emptySink("sink11", "")).copy(metaData = MetaData("test", StreamMetaData(), false,
+      .emptySink("sink11", "")).copy(metaData = MetaData("test", StreamMetaData(), isSubprocess = false,
         Some(ProcessAdditionalFields(Some(""), Set(Group("gr1", Set("filter1", "sink11"))), Map.empty))))
     val processCounter = new ProcessCounter(subprocessRepository(Set()))
 
-    val computed = processCounter.computeCounts(process, Map("source1" -> RawCount(50, 0L),
-      "filter1" -> RawCount(40, 9), "sink11" -> RawCount(30, 8)).get)
+    val computed = processCounter.computeCounts(process, MapBasedCounts(Map("source1" -> RawCount(50, 0L),
+      "filter1" -> RawCount(40, 9), "sink11" -> RawCount(30, 8))))
 
     computed shouldBe Map(
       "source1" -> NodeCount(50, 0),
@@ -74,12 +79,12 @@ class ProcessCounterTest extends FlatSpec with Matchers {
         )
     )))
 
-    val computed = counter.computeCounts(process, Map("source1" -> RawCount(70L, 0L),
+    val computed = counter.computeCounts(process, MapBasedCounts(Map("source1" -> RawCount(70L, 0L),
       "filter1" -> RawCount(60, 1),
       "sub1" -> RawCount(55, 2),
       "sub1-subFilter1" -> RawCount(45, 4),
       "sub1-outId1" -> RawCount(35, 5),
-      "sink11" -> RawCount(30, 10)).get)
+      "sink11" -> RawCount(30, 10))))
 
     computed shouldBe Map(
       "source1" -> NodeCount(70, 0),
