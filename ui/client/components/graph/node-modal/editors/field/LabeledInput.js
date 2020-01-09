@@ -1,9 +1,13 @@
 import React from "react"
 import PropTypes from "prop-types"
 import Input from "./Input"
+import SwitchIcon from "../expression/SwitchIcon"
 
 export const LabeledInput = (props) => {
-  const {renderFieldLabel, placeholder, isMarked, readOnly, value, autofocus, showValidation, validators, onChange} = props
+  const {
+    renderFieldLabel, placeholder, isMarked, readOnly, value, autofocus, showValidation, validators, onChange,
+    shouldShowSwitch, switchable, toggleEditor, displayRawEditor, hint, formattedValue
+  } = props
 
   return (
     <div className="node-row">
@@ -11,12 +15,21 @@ export const LabeledInput = (props) => {
       <Input isMarked={isMarked}
              readOnly={readOnly}
              value={value}
-             className={"node-value"}
+             formattedValue={formattedValue}
+             className={(shouldShowSwitch ? "switchable " : "") + "node-value"}
              autoFocus={autofocus}
              placeholder={placeholder}
              showValidation={showValidation}
              validators={validators}
              onChange={onChange}/>
+      <SwitchIcon
+        switchable={switchable}
+        onClick={toggleEditor}
+        shouldShowSwitch={shouldShowSwitch}
+        displayRawEditor={displayRawEditor}
+        hint={hint}
+        readOnly={readOnly}
+      />
     </div>
   )
 }

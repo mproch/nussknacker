@@ -7,7 +7,8 @@ export default function RawEditor(props) {
 
   const {
     renderFieldLabel, fieldLabel, fieldName, expressionObj, validators, isMarked, showValidation, readOnly,
-    onValueChange, rows, cols, switchable, toggleEditor, shouldShowSwitch, rowClassName, valueClassName, displayRawEditor
+    onValueChange, rows, cols, switchableTo, toggleEditor, shouldShowSwitch, rowClassName, valueClassName, displayRawEditor,
+    fieldType, editorName, switchableToHint, notSwitchableToHint
   } = props
 
   return (
@@ -32,11 +33,13 @@ export default function RawEditor(props) {
         />
       </div>
       <SwitchIcon
-        switchable={switchable}
+        switchable={switchableTo(expressionObj)}
+        hint={switchableTo(expressionObj) ? switchableToHint : notSwitchableToHint}
         onClick={toggleEditor}
         shouldShowSwitch={shouldShowSwitch}
         displayRawEditor={displayRawEditor}
         readOnly={readOnly}
+        fieldType={fieldType}
       />
     </div>
   )
@@ -55,7 +58,7 @@ RawEditor.propTypes = {
   validators: PropTypes.array,
   isMarked: PropTypes.bool,
   showValidation: PropTypes.bool,
-  switchable: PropTypes.bool,
+  switchable: PropTypes.func,
   toggleEditor: PropTypes.func,
   shouldShowSwitch: PropTypes.bool
 }
@@ -64,3 +67,9 @@ RawEditor.defaultProps = {
   rows: 1,
   cols: 50
 }
+
+RawEditor.supportedFieldTypes = ["String", "Boolean", "expression"]
+
+RawEditor.switchableTo = (_) => true
+
+RawEditor.switchableToHint = "Switch to expression mode"
