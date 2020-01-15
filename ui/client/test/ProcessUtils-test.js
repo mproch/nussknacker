@@ -116,9 +116,9 @@ const processDefinition = {
     "date3": { "returnType": { "refClazzName": "java.time.Date"}, "categories" : []}
   },
   "typesInformation" : [
-    { "clazzName": { "refClazzName": "org.nussknacker.model.Transaction"}, "methods": { "CUSTOMER_ID": { "refClazz" : {"refClazzName": "java.lang.String"}}}},
-    { "clazzName": { "refClazzName": "pl.touk.nussknacker.model.Account"}, "methods": { "ACCOUNT_NO": { "refClazz" : { "refClazzName": "java.lang.String"}}}},
-    { "clazzName": { "refClazzName": "java.time.LocalDate"}, "methods": { "atStartOfDay": { "refClazz" : { "refClazzName": "java.time.ZonedDateTime"}}}}
+    { "clazzName": { "refClazzName": "org.nussknacker.model.Transaction"}, "methods": [ { "name": "CUSTOMER_ID", "refClazz" : {"refClazzName": "java.lang.String"}}]},
+    { "clazzName": { "refClazzName": "pl.touk.nussknacker.model.Account"}, "methods": [ { "name":  "ACCOUNT_NO", "refClazz" : { "refClazzName": "java.lang.String"}}]},
+    { "clazzName": { "refClazzName": "java.time.LocalDate"}, "methods": [ { "name": "atStartOfDay", "refClazz" : { "refClazzName": "java.time.ZonedDateTime"}}]}
   ]
 }
 

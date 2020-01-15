@@ -1,9 +1,7 @@
 package pl.touk.nussknacker.engine.types
 
-import java.lang.reflect
 import java.lang.reflect._
 
-import cats.Eval
 import cats.data.StateT
 import cats.effect.IO
 import org.apache.commons.lang3.{ClassUtils, StringUtils}
@@ -63,14 +61,14 @@ object EspTypeUtils {
   }
 
   private def getPublicMethodAndFields(clazz: Class[_])
-                                      (implicit settings: ClassExtractionSettings): Map[String, MethodInfo] = {
+                                      (implicit settings: ClassExtractionSettings): Set[MethodInfo] = {
     val methods = publicMethods(clazz)
     val fields = publicFields(clazz)
     methods ++ fields
   }
 
   private def publicMethods(clazz: Class[_])
-                           (implicit settings: ClassExtractionSettings): Map[String, MethodInfo] = {
+                           (implicit settings: ClassExtractionSettings): Set[MethodInfo] = {
     val shouldHideToString = classOf[HideToString].isAssignableFrom(clazz)
 
     /* From getMethods javadoc: If this {@code Class} object represents an interface then the returned array
@@ -89,20 +87,13 @@ object EspTypeUtils {
         !blacklistedMethods.contains(m.getName) && !m.getName.contains("$")
       )
 
-    val methodNameAndInfoList = filteredMethods.flatMap { method =>
-      methodAccessMethods(method).map(_ -> toMethodInfo(method))
-    }
-
-    val sortedByArityDesc = methodNameAndInfoList.sortBy(- _._2.parameters.size)
-
-    // Currently SpEL methods are naively and optimistically type checked. This is, for overloaded methods with
-    // different arity, validation is successful when SpEL MethodReference provides the number of parameters greater
-    // or equal to method with the smallest arity.
-    sortedByArityDesc.toMap
+    filteredMethods.flatMap { method =>
+      methodAccessMethods(method).map(toMethodInfo(_, method))
+    }.toSet
   }
 
-  private def toMethodInfo(method: Method)
-    = MethodInfo(getParameters(method), getReturnClassForMethod(method), getNussknackerDocs(method))
+  private def toMethodInfo(name: String, method: Method)
+    = MethodInfo(name, getParameters(method), getReturnClassForMethod(method), getNussknackerDocs(method))
 
   private def methodAccessMethods(method: Method) = {
     val isGetter = (method.getName.startsWith("get") || method.getName.startsWith("is")) && method.getParameterCount == 0
@@ -111,7 +102,7 @@ object EspTypeUtils {
   }
 
   private def publicFields(clazz: Class[_])
-                          (implicit settings: ClassExtractionSettings): Map[String, MethodInfo] = {
+                          (implicit settings: ClassExtractionSettings): Set[MethodInfo] = {
     val interestingFields = clazz.getFields
       .filterNot(f => Modifier.isStatic(f.getModifiers))
       .filter(_.getAnnotation(classOf[Hidden]) == null)
@@ -120,8 +111,8 @@ object EspTypeUtils {
         !m.getName.contains("$")
       )
     interestingFields.map { field =>
-      field.getName -> MethodInfo(List.empty, getReturnClassForField(field), getNussknackerDocs(field))
-    }.toMap
+      MethodInfo(field.getName, List.empty, getReturnClassForField(field), getNussknackerDocs(field))
+    }.toSet
   }
 
   private def getReturnClassForMethod(method: Method): ClazzRef = {

@@ -32,7 +32,7 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
 
   test("extract type info from classes from additional variables") {
     val classDefinition = processDefinition.typesInformation.find(_.clazzName.clazz == classOf[OnlyUsedInAdditionalVariable])
-      classDefinition.map(_.methods.keys) shouldBe Some(Set("someField", "toString"))
+      classDefinition.map(_.methods.map(_.name)) shouldBe Some(Set("someField", "toString"))
   }
 
   test("extract definition from WithExplicitMethodToInvoke") {

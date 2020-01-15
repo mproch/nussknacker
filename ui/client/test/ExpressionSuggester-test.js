@@ -3,35 +3,35 @@ import ExpressionSuggester from '../components/graph/node-modal/editors/expressi
 const typesInformation = [
   {
     "clazzName": {"refClazzName": "org.A"},
-    "methods": {"fooString": {"refClazz": {"refClazzName": "java.lang.String"} }, "barB": {"refClazz": {"refClazzName": "org.B"} } }
+    "methods": [{"name": "fooString", "refClazz": {"refClazzName": "java.lang.String"} }, {"name": "barB", "refClazz": {"refClazzName": "org.B"} } ]
   },
   {
     "clazzName": {"refClazzName": "org.B"},
-    "methods": {"bazC": {"refClazz": {"refClazzName": "org.C"} } }
+    "methods": [{"name": "bazC", "refClazz": {"refClazzName": "org.C"} } ]
   },
   {
     "clazzName": {"refClazzName": "org.C"},
-    "methods": {"quaxString": {"refClazz": {"refClazzName": "java.lang.String"} }}
+    "methods": [{"name": "quaxString", "refClazz": {"refClazzName": "java.lang.String"} }]
   },
   {
     "clazzName": {"refClazzName": "org.AA"},
-    "methods": {"fooString": {"refClazz": {"refClazzName": "java.lang.String"} }, "barB": {"refClazz": {"refClazzName": "org.C"} } }
+    "methods": [{"name": "fooString", "refClazz": {"refClazzName": "java.lang.String"} }, {"name": "barB", "refClazz": {"refClazzName": "org.C"} } ]
   },
   {
     "clazzName": {"refClazzName": "org.WithList"},
-    "methods": {"listField": {"refClazz": {"refClazzName": "java.util.List", params: [{refClazzName: "org.A"}]} }}
+    "methods": [{"name": "listField", "refClazz": {"refClazzName": "java.util.List", params: [{refClazzName: "org.A"}]} }]
   },
   {
     "clazzName": {"refClazzName": "java.lang.String"},
-    "methods": {"toUpperCase": {"refClazz": {"refClazzName": "java.lang.String"} }}
+    "methods": [{"name": "toUpperCase", "refClazz": {"refClazzName": "java.lang.String"} }]
   },
   {
     "clazzName": {"refClazzName": "java.util.LocalDateTime"},
-    "methods": {"isBefore": {"refClazz": {"refClazzName": "java.lang.Boolean"}, "params": {"name": "arg0", "refClazz": "java.util.LocalDateTime"}}}
+    "methods": [{"name": "isBefore", "refClazz": {"refClazzName": "java.lang.Boolean"}, "params": {"name": "arg0", "refClazz": "java.util.LocalDateTime"}}]
   },
   {
     "clazzName": {"refClazzName": "org.Util"},
-    "methods": {"now": {"refClazz": {"refClazzName": "java.util.LocalDateTime"}}}
+    "methods": [{"name": "now", "refClazz": {"refClazzName": "java.util.LocalDateTime"}}]
   }
 ];
 

@@ -171,16 +171,13 @@ object TypeInfos {
 
   @JsonCodec(encodeOnly = true) case class Parameter(name: String, refClazz: ClazzRef)
 
-  @JsonCodec(encodeOnly = true) case class MethodInfo(parameters: List[Parameter], refClazz: ClazzRef, description: Option[String])
+  @JsonCodec(encodeOnly = true) case class MethodInfo(name: String, parameters: List[Parameter], refClazz: ClazzRef, description: Option[String])
 
-  @JsonCodec(encodeOnly = true) case class ClazzDefinition(clazzName: ClazzRef, methods: Map[String, MethodInfo]) {
-    def getMethodClazzRef(methodName: String): Option[ClazzRef] = {
-      methods.get(methodName).map(_.refClazz)
-    }
+  @JsonCodec(encodeOnly = true) case class ClazzDefinition(clazzName: ClazzRef, methods: Set[MethodInfo]) {
 
     def getPropertyOrFieldClazzRef(methodName: String): Option[ClazzRef] = {
-      val filteredMethods = methods.filter(_._2.parameters.isEmpty)
-      val methodInfoes = filteredMethods.get(methodName)
+      val filteredMethods = methods.filter(_.parameters.isEmpty)
+      val methodInfoes = filteredMethods.find(_.name == methodName)
       methodInfoes.map(_.refClazz)
     }
   }

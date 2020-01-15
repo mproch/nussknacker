@@ -90,7 +90,7 @@ object TypesInformationExtractor {
   private def definitionsFromMethods(clazzRef: ClazzRef, currentSet: Set[ClazzRef])
                                      (implicit settings: ClassExtractionSettings): Set[ClazzDefinition] = {
 
-    clazzDefinition(clazzRef.clazz).methods.values.toSet
+    clazzDefinition(clazzRef.clazz).methods.toSet
             .flatMap((kl: MethodInfo) => kl.refClazz +: kl.parameters.map(_.refClazz))
             .diff(currentSet)
             .filterNot(m => m.refClazzName.startsWith("["))

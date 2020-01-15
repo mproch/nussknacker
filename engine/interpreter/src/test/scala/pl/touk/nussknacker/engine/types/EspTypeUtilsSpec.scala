@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.types
 
 import java.util.regex.Pattern
 
-import org.scalatest.{FlatSpec, FunSuite, Matchers}
+import org.scalatest.{FunSuite, Matchers}
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import pl.touk.nussknacker.engine.api.{Documentation, Hidden, HideToString, ParamName}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, ClassMemberPatternPredicate}
@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter}
 
-import scala.annotation.meta.{field, getter}
+import scala.annotation.meta.getter
 import scala.concurrent.Future
 import scala.reflect.runtime.universe._
 
@@ -58,23 +58,23 @@ class EspTypeUtilsSpec extends FunSuite with Matchers {
     val infos = TypesInformationExtractor.clazzAndItsChildrenDefinition(List(Typed[SampleClass]))(ClassExtractionSettings.Default)
     val sampleClassInfo = infos.find(_.clazzName.refClazzName.contains("SampleClass")).get
 
-    sampleClassInfo.methods shouldBe Map(
-      "foo" -> MethodInfo(List.empty, ClazzRef(Integer.TYPE), None),
-      "bar" -> MethodInfo(List.empty, ClazzRef[String], None),
-      "toString" -> MethodInfo(List(), ClazzRef[String], None)
+    sampleClassInfo.methods shouldBe Set(
+      MethodInfo("foo", List.empty, ClazzRef(Integer.TYPE), None),
+      MethodInfo("bar", List.empty, ClazzRef[String], None),
+      MethodInfo("toString", List(), ClazzRef[String], None)
     )
   }
 
   test("shoud detect java beans and fields in java class") {
-    EspTypeUtils.clazzDefinition(classOf[JavaSampleClass])(ClassExtractionSettings.Default).methods shouldBe Map(
-      "getNotProperty" -> MethodInfo(List(Parameter("foo", ClazzRef[Int])), ClazzRef[String], None),
-      "bar" -> MethodInfo(List(), ClazzRef[String], None),
-      "getBeanProperty" -> MethodInfo(List(), ClazzRef[String], None),
-      "beanProperty" -> MethodInfo(List(), ClazzRef[String], None),
-      "isBooleanProperty" -> MethodInfo(List(), ClazzRef[Boolean], None),
-      "booleanProperty" -> MethodInfo(List(), ClazzRef[Boolean], None),
-      "foo" -> MethodInfo(List(), ClazzRef(Integer.TYPE), None),
-      "toString" -> MethodInfo(List(), ClazzRef[String], None)
+    EspTypeUtils.clazzDefinition(classOf[JavaSampleClass])(ClassExtractionSettings.Default).methods shouldBe Set(
+      MethodInfo("getNotProperty", List(Parameter("foo", ClazzRef[Int])), ClazzRef[String], None),
+      MethodInfo("bar", List(), ClazzRef[String], None),
+      MethodInfo("getBeanProperty", List(), ClazzRef[String], None),
+      MethodInfo("beanProperty", List(), ClazzRef[String], None),
+      MethodInfo("isBooleanProperty", List(), ClazzRef[Boolean], None),
+      MethodInfo("booleanProperty", List(), ClazzRef[Boolean], None),
+      MethodInfo("foo", List(), ClazzRef(Integer.TYPE), None),
+      MethodInfo("toString", List(), ClazzRef[String], None)
     )
 
   }
@@ -100,9 +100,9 @@ class EspTypeUtilsSpec extends FunSuite with Matchers {
         )))
         val sampleClassInfo = infos.find(_.clazzName.refClazzName.contains(clazzName)).get
 
-        sampleClassInfo.methods shouldBe Map(
-          "toString" -> MethodInfo(List(), ClazzRef[String], None),
-          "foo" -> MethodInfo(List.empty, ClazzRef(Integer.TYPE), None)
+        sampleClassInfo.methods shouldBe Set(
+          MethodInfo("toString", List(), ClazzRef[String], None),
+          MethodInfo("foo", List.empty, ClazzRef(Integer.TYPE), None)
         )
       }
     }
@@ -112,11 +112,11 @@ class EspTypeUtilsSpec extends FunSuite with Matchers {
 
     val typeUtils = TypesInformationExtractor.clazzAndItsChildrenDefinition(List(Typed[Embeddable]))(ClassExtractionSettings.Default)
 
-    typeUtils.find(_.clazzName == ClazzRef[TestEmbedded]) shouldBe Some(ClazzDefinition(ClazzRef[TestEmbedded], Map(
-      "string" -> MethodInfo(List(), ClazzRef[String], None),
-      "javaList" -> MethodInfo(List(), ClazzRef.fromDetailedType[java.util.List[String]], None),
-      "scalaList" -> MethodInfo(List(), ClazzRef.fromDetailedType[List[String]], None),
-      "toString" -> MethodInfo(List(), ClazzRef[String], None)
+    typeUtils.find(_.clazzName == ClazzRef[TestEmbedded]) shouldBe Some(ClazzDefinition(ClazzRef[TestEmbedded], Set(
+      MethodInfo("string", List(), ClazzRef[String], None),
+      MethodInfo("javaList", List(), ClazzRef.fromDetailedType[java.util.List[String]], None),
+      MethodInfo("scalaList", List(), ClazzRef.fromDetailedType[List[String]], None),
+      MethodInfo("toString", List(), ClazzRef[String], None)
     )))
 
   }
@@ -124,17 +124,17 @@ class EspTypeUtilsSpec extends FunSuite with Matchers {
   test("should not discover hidden fields") {
     val typeUtils = TypesInformationExtractor.clazzAndItsChildrenDefinition(List(Typed[ClassWithHiddenFields]))(ClassExtractionSettings.Default)
 
-    typeUtils.find(_.clazzName == ClazzRef[ClassWithHiddenFields]) shouldBe Some(ClazzDefinition(ClazzRef[ClassWithHiddenFields], Map(
-      "normalField" -> MethodInfo(List(), ClazzRef[String], None),
-      "normalParam" -> MethodInfo(List(), ClazzRef[String], None),
-      "toString" -> MethodInfo(List(), ClazzRef[String], None)
+    typeUtils.find(_.clazzName == ClazzRef[ClassWithHiddenFields]) shouldBe Some(ClazzDefinition(ClazzRef[ClassWithHiddenFields], Set(
+      MethodInfo("normalField", List(), ClazzRef[String], None),
+      MethodInfo("normalParam", List(), ClazzRef[String], None),
+      MethodInfo("toString", List(), ClazzRef[String], None)
     )))
   }
 
   test("should skip toString method when HideToString implemented") {
     val hiddenToStringClasses = Table("class", classOf[JavaBannedToStringClass], classOf[BannedToStringClass])
     forAll(hiddenToStringClasses) { EspTypeUtils.clazzDefinition(_)(ClassExtractionSettings.Default)
-      .methods.keys shouldNot contain("toString")
+      .methods.map(_.name) shouldNot contain("toString")
     }
   }
 
@@ -201,19 +201,19 @@ class EspTypeUtilsSpec extends FunSuite with Matchers {
     val javaClazzInfo = javaExtractedInfo.find(_.clazzName == ClazzRef[JavaSampleDocumentedClass]).get
 
     val table = Table(
-      ("method", "methodInfo"),
+      ("methodInfo"),
       //FIXME: scala 2.11, 2.12 have different behaviour - named parameters are extracted differently :/
-      //("foo", MethodInfo(parameters = List(param[String]("fooParam1")), refClazz = ClazzRef[Long], description = None)),
-      ("bar", MethodInfo(parameters = List(param[Long]("barparam1")), refClazz = ClazzRef[String], description = None)),
-      ("baz", MethodInfo(parameters = List(param[String]("bazparam1"), param[Int]("bazparam2")), refClazz = ClazzRef[Long], description = Some(ScalaSampleDocumentedClass.bazDocs))),
+      //(MethodInfo("foo", parameters = List(param[String]("fooParam1")), refClazz = ClazzRef[Long], description = None)),
+      (MethodInfo("bar", parameters = List(param[Long]("barparam1")), refClazz = ClazzRef[String], description = None)),
+      (MethodInfo("baz", parameters = List(param[String]("bazparam1"), param[Int]("bazparam2")), refClazz = ClazzRef[Long], description = Some(ScalaSampleDocumentedClass.bazDocs))),
       //FIXME: scala 2.11, 2.12 have different behaviour - named parameters are extracted differently :/
-      //("qux", MethodInfo(parameters = List(param[String]("quxParam1")), refClazz = ClazzRef[Long], description = Some(ScalaSampleDocumentedClass.quxDocs))),
-      ("field1", MethodInfo(parameters = List.empty, refClazz = ClazzRef[Long], description = None)),
-      ("field2", MethodInfo(parameters = List.empty, refClazz = ClazzRef[Long], description = Some(ScalaSampleDocumentedClass.field2Docs)))
+      //(MethodInfo("qux", parameters = List(param[String]("quxParam1")), refClazz = ClazzRef[Long], description = Some(ScalaSampleDocumentedClass.quxDocs))),
+      (MethodInfo("field1", parameters = List.empty, refClazz = ClazzRef[Long], description = None)),
+      (MethodInfo("field2", parameters = List.empty, refClazz = ClazzRef[Long], description = Some(ScalaSampleDocumentedClass.field2Docs)))
     )
-    forAll(table){ case (method, methodInfo) =>
-        scalaClazzInfo.methods(method) shouldBe methodInfo
-        javaClazzInfo.methods(method) shouldBe methodInfo
+    forAll(table){ methodInfo =>
+        scalaClazzInfo.methods.find(_.name == methodInfo.name) shouldBe Some(methodInfo)
+        javaClazzInfo.methods.find(_.name == methodInfo.name) shouldBe Some(methodInfo)
     }
   }
 

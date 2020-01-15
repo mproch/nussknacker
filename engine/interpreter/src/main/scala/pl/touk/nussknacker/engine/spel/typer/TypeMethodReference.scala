@@ -42,7 +42,7 @@ class TypeMethodReference(methodReference: MethodReference, currentResults: List
       case _ =>
         val isClass = clazzDefinitions.map(k => Typed(k.clazzName)).exists(_.canBeSubclassOf(Typed[Class[_]]))
         val display = clazzDefinitions.map(k => Typed(k.clazzName)).map(_.display).mkString(", ")
-        clazzDefinitions.flatMap(_.methods.get(methodReference.getName)) match {
+        clazzDefinitions.flatMap(_.methods.filter(_.name == methodReference.getName)) match {
           //Static method can be invoked - we cannot find them ATM
           case Nil if isClass => Right(Unknown)
           case Nil  => Left(s"Unknown method '${methodReference.getName}' in $display")
@@ -52,7 +52,7 @@ class TypeMethodReference(methodReference: MethodReference, currentResults: List
 
   //TODO: we check only arity, but don't check if any of overloaded methods has matching signature
   private def typeFromMethodInfoes(methodInfoes: List[MethodInfo]): Either[String, TypingResult] =
-    methodInfoes.filter(_.parameters.size <= paramsCount) match {
+    methodInfoes.filter(_.parameters.size == paramsCount) match {
       case Nil =>
         Left(s"Invalid arity for '${methodReference.getName}'")
       case h::t =>

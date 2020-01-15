@@ -183,9 +183,12 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     parsed.leftMap(_.head).leftMap(_.message) shouldEqual expectedValidation
   }
 
-  test("type optimistically MethodReference") {
-    val parsed = parse[Any]("#processHelper.add(1, 1, 1)", ctxWithGlobal)
+  test("type MethodReference") {
+    val parsed = parse[Any]("#processHelper.add(1, 1)", ctxWithGlobal)
     parsed.isValid shouldBe true
+
+    val parsedOverloaded = parse[Any]("'abc'.substring(0, 2) + 'abc'.substring(1)", ctxWithGlobal)
+    parsedOverloaded.isValid shouldBe true
   }
 
   test("return invalid type if PropertyOrFieldReference does not exists") {
