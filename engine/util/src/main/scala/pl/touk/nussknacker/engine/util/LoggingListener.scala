@@ -8,14 +8,19 @@ import scala.util.Try
 object LoggingListener extends ProcessListener with Serializable {
   import org.slf4j.LoggerFactory
 
-  val className = getClass.getName.init
+  //this will be companion object name...
+  private val className = getClass.getName.init
+
+  private val baseLogger = LoggerFactory.getLogger(className)
 
   //don't need to cache loggers, because logback already does it
-  private def debug(keys: List[String], message: => String) = {
-    val loggerKey = keys.mkString(".")
-    val logger = LoggerFactory.getLogger(s"$className.$loggerKey")
-    if (logger.isDebugEnabled()) {
-      logger.debug(message)
+  private def debug(keys: List[String], message: => String): Unit = {
+    if (baseLogger.isDebugEnabled) {
+      val loggerKey = keys.mkString(".")
+      val logger = LoggerFactory.getLogger(s"$className.$loggerKey")
+      if (logger.isDebugEnabled()) {
+        logger.debug(message)
+      }
     }
   }
 
@@ -35,11 +40,11 @@ object LoggingListener extends ProcessListener with Serializable {
     debug(List(metadata.id, nodeId, "service", id), s"Invocation ended-up with result: $result. Context: $context")
   }
 
-  override def sinkInvoked(nodeId: String, id: String, context: Context, metadata: MetaData, param: Any) = {
+  override def sinkInvoked(nodeId: String, id: String, context: Context, metadata: MetaData, param: Any): Unit = {
     debug(List(metadata.id, nodeId, "sink", id), s"Sink invoked with param: $param. Context: $context")
   }
 
-  override def exceptionThrown(exceptionInfo: EspExceptionInfo[_ <: Throwable]) = {
+  override def exceptionThrown(exceptionInfo: EspExceptionInfo[_ <: Throwable]): Unit = {
     //TODO:??
   }
 }

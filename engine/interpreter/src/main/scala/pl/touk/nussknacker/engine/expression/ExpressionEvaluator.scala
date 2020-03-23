@@ -81,9 +81,8 @@ class ExpressionEvaluator(globalVariablesPreparer: GlobalVariablesPreparer,
   def evaluate[R](expr: Expression, expressionId: String, nodeId: String, ctx: Context)
                  (implicit ec: ExecutionContext, metaData: MetaData): Future[ValueWithContext[R]] = {
     val lazyValuesProvider = lazyValuesProviderCreator(ec, metaData, nodeId)
-    val ctxWithGlobals = ctx.withVariables(globalVariablesPreparer.prepareGlobalVariables(metaData).mapValues(_.obj))
 
-    expr.evaluate[R](ctxWithGlobals, lazyValuesProvider).map { valueWithLazyContext =>
+    expr.evaluate[R](ctx, globalVariablesPreparer.prepareGlobalVariables(metaData).mapValues(_.obj), lazyValuesProvider).map { valueWithLazyContext =>
       listeners.foreach(_.expressionEvaluated(nodeId, expressionId, expr.original, ctx, metaData, valueWithLazyContext.value))
       ValueWithContext(valueWithLazyContext.value, ctx.withLazyContext(valueWithLazyContext.lazyContext))
     }

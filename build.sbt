@@ -420,6 +420,19 @@ lazy val generic = (project in engine("flink/generic")).
     })
   .dependsOn(process, kafkaFlinkUtil, avroFlinkUtil, flinkTestUtil % "test", kafkaTestUtil % "test")
 
+lazy val performancetests = (project in engine("flink/performancetests")).
+  settings(commonSettings).
+  settings(
+    name := "nussknacker-performance-tests",
+    libraryDependencies ++= {
+      Seq(
+        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
+        "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV % "provided"
+      )
+    })
+  .dependsOn(process, kafkaFlinkUtil, avroFlinkUtil, flinkTestUtil % "test", kafkaTestUtil % "test")
+
+
 lazy val process = (project in engine("flink/process")).
   settings(commonSettings).
   settings(forkSettings).

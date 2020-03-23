@@ -15,7 +15,7 @@ import org.springframework.core.convert.TypeDescriptor
 import org.springframework.expression._
 import org.springframework.expression.common.{CompositeStringExpression, LiteralExpression}
 import org.springframework.expression.spel.ast.SpelNodeImpl
-import org.springframework.expression.spel.support.{ReflectiveMethodExecutor, ReflectiveMethodResolver, StandardEvaluationContext, StandardTypeLocator}
+import org.springframework.expression.spel.support.{ReflectiveMethodExecutor, ReflectiveMethodResolver, ReflectivePropertyAccessor, StandardEvaluationContext, StandardTypeLocator}
 import org.springframework.expression.spel.{SpelCompilerMode, SpelEvaluationException, SpelParserConfiguration, standard}
 import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api.Context
@@ -76,7 +76,7 @@ final case class ParsedSpelExpression(original: String, parser: () => Validated[
 class SpelExpression(parsed: ParsedSpelExpression,
                      expectedReturnType: TypingResult,
                      flavour: Flavour,
-                     prepareEvaluationContext: Context => EvaluationContext) extends api.expression.Expression with LazyLogging {
+                     prepareEvaluationContext: (Context, Map[String, Any]) => EvaluationContext) extends api.expression.Expression with LazyLogging {
 
   import pl.touk.nussknacker.engine.spel.SpelExpressionParser._
 
@@ -94,13 +94,13 @@ class SpelExpression(parsed: ParsedSpelExpression,
     }
 
   // TODO: better interoperability with scala type, mainly: scala.math.BigDecimal, scala.math.BigInt and collections
-  override def evaluate[T](ctx: Context,
+  override def evaluate[T](ctx: Context, globals: Map[String, Any],
                            lazyValuesProvider: LazyValuesProvider): Future[ValueWithLazyContext[T]] = logOnException(ctx) {
     if (expectedClass == classOf[SpelExpressionRepr]) {
       return Future.successful(ValueWithLazyContext(SpelExpressionRepr(parsed.parsed, ctx, original).asInstanceOf[T], ctx.lazyContext))
     }
 
-    val evaluationContext = prepareEvaluationContext(ctx)
+    val evaluationContext = prepareEvaluationContext(ctx, globals)
     evaluationContext.setVariable(LazyValuesProviderVariableName, lazyValuesProvider)
     evaluationContext.setVariable(LazyContextVariableName, ctx.lazyContext)
 
@@ -129,7 +129,7 @@ class SpelExpressionParser(parser: org.springframework.expression.spel.standard.
                            dictRegistry: DictRegistry,
                            enableSpelForceCompile: Boolean,
                            flavour: Flavour,
-                           prepareEvaluationContext: Context => EvaluationContext) extends ExpressionParser {
+                           prepareEvaluationContext: (Context, Map[String, Any]) => EvaluationContext) extends ExpressionParser {
 
   import pl.touk.nussknacker.engine.spel.SpelExpressionParser._
 
@@ -261,23 +261,26 @@ object SpelExpressionParser extends LazyLogging {
   private def prepareEvaluationContext[T](classLoader: ClassLoader,
                                           expressionImports: List[String],
                                           propertyAccessors: Seq[PropertyAccessor],
-                                          expressionFunctions: Map[String, Method])
-                                         (ctx: Context): EvaluationContext = {
-    val evaluationContext = new StandardEvaluationContext()
+                                          expressionFunctions: Map[String, Method]):
+                                          (Context, Map[String, Any]) => EvaluationContext = {
     val locator = new StandardTypeLocator(classLoader)
     expressionImports.foreach(locator.registerImport)
-    evaluationContext.setTypeLocator(locator)
-    propertyAccessors.foreach(evaluationContext.addPropertyAccessor)
+    import scala.collection.JavaConverters._
+    val allAccessors = (new ReflectivePropertyAccessor() :: propertyAccessors.toList).asJava
 
-    evaluationContext.setMethodResolvers(optimizedMethodResolvers())
 
-    ctx.variables.foreach {
-      case (k, v) => evaluationContext.setVariable(k, v)
+    (ctx: Context, globals: Map[String, Any]) => {
+      val evaluationContext = new StandardEvaluationContext() {
+        override def lookupVariable(name: String): AnyRef = {
+          ctx.get(name).orElse(globals.get(name)).orElse(expressionFunctions.get(name)).orNull.asInstanceOf[AnyRef]
+        }
+      }
+      evaluationContext.setTypeLocator(locator)
+      evaluationContext.setPropertyAccessors(allAccessors)
+      evaluationContext.setMethodResolvers(optimizedMethodResolvers())
+      evaluationContext
     }
-    expressionFunctions.foreach {
-      case (k, v) => evaluationContext.registerFunction(k, v)
-    }
-    evaluationContext
+
   }
 
   private def optimizedMethodResolvers() : java.util.List[MethodResolver] = {

@@ -100,7 +100,7 @@ class SqlExpression(private[sql] val columnModels: Map[String, ColumnModel],
     new HsqlSqlQueryableDataBase(original, columnModels)
   }
 
-  override def evaluate[T](ctx: Context, lazyValuesProvider: LazyValuesProvider): Future[ValueWithLazyContext[T]] = {
+  override def evaluate[T](ctx: Context, global: Map[String, Any], lazyValuesProvider: LazyValuesProvider): Future[ValueWithLazyContext[T]] = {
     Future.successful {
       val result = evaluate(ctx).asJava.asInstanceOf[T]
       ValueWithLazyContext(result, ctx.lazyContext)

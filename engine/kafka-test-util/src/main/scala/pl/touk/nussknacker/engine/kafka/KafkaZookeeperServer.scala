@@ -19,21 +19,21 @@ import org.scalatest.time.{Millis, Seconds, Span}
 object KafkaZookeeperServer {
   val localhost = "127.0.0.1"
 
-  def run(zkPort: Int, kafkaPort: Int, kafkaBrokerConfig: Map[String, String]): KafkaZookeeperServer = {
-    val zk = runZookeeper(zkPort)
-    val kafka = runKafka(zkPort, kafkaPort, kafkaBrokerConfig)
+  def run(zkPort: Int, kafkaPort: Int, kafkaBrokerConfig: Map[String, String], dir: File = tempDir()): KafkaZookeeperServer = {
+    val zk = runZookeeper(zkPort, new File(dir, "zk"))
+    val kafka = runKafka(zkPort, kafkaPort, new File(dir, "kafka"), kafkaBrokerConfig)
     KafkaZookeeperServer(zk, kafka, s"$localhost:$zkPort", s"$localhost:$kafkaPort")
   }
 
-  private def runZookeeper(zkPort: Int): NIOServerCnxnFactory = {
+  private def runZookeeper(zkPort: Int, dir: File): NIOServerCnxnFactory = {
     val factory = new NIOServerCnxnFactory()
     factory.configure(new InetSocketAddress(localhost, zkPort), 1024)
-    val zkServer = new ZooKeeperServer(tempDir(), tempDir(), ZooKeeperServer.DEFAULT_TICK_TIME)
+    val zkServer = new ZooKeeperServer(dir, dir, ZooKeeperServer.DEFAULT_TICK_TIME)
     factory.startup(zkServer)
     factory
   }
 
-  private def runKafka(zkPort: Int, kafkaPort: Int, kafkaBrokerConfig: Map[String, String]): KafkaServer = {
+  private def runKafka(zkPort: Int, kafkaPort: Int, dir: File, kafkaBrokerConfig: Map[String, String]): KafkaServer = {
     val properties = new Properties()
     properties.setProperty("zookeeper.connect", s"$localhost:$zkPort")
     properties.setProperty("broker.id", "0")
@@ -45,7 +45,7 @@ object KafkaZookeeperServer {
     properties.setProperty("log.cleaner.dedupe.buffer.size", (2 * 1024 * 1024L).toString) //2MB should be enough for tests
 
     properties.setProperty("port", s"$kafkaPort")
-    properties.setProperty("log.dir", tempDir().getAbsolutePath)
+    properties.setProperty("log.dir", dir.getAbsolutePath)
 
     kafkaBrokerConfig.foreach { case (key, value) =>
       properties.setProperty(key, value)

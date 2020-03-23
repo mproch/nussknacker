@@ -4,7 +4,7 @@ import java.util.Collections
 import java.util.concurrent.TimeUnit
 
 import cats.data.NonEmptyList
-import com.codahale.metrics.{Histogram, SlidingTimeWindowReservoir}
+import com.codahale.metrics.{ExponentiallyDecayingReservoir, Histogram, SlidingTimeWindowReservoir}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.{LazyLogging, Logger}
 import org.apache.flink.api.common.functions._
@@ -359,7 +359,10 @@ object FlinkStreamingProcessRegistrar {
   class EventTimeDelayMeterFunction[T](groupId: String, slidingWindow: FiniteDuration) extends ProcessFunction[T, T] {
 
     lazy val histogramMeter = new DropwizardHistogramWrapper(
-      new Histogram(new SlidingTimeWindowReservoir(slidingWindow.toMillis, TimeUnit.MILLISECONDS)))
+      new Histogram(
+        new ExponentiallyDecayingReservoir()
+        //new SlidingTimeWindowReservoir(slidingWindow.toMillis, TimeUnit.MILLISECONDS)
+      ))
 
     lazy val minimalDelayGauge: Gauge[Long] = new Gauge[Long] {
       override def getValue: Long = {
