@@ -152,7 +152,8 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
 
   test("should pass timestamp from flink to kafka") {
     val topicConfig = createAndRegisterTopicConfig("timestamp-flink-kafka", LongFieldV1.schema)
-    val timeToSetInProcess = 25301240L
+    //Can't be too long ago, otherwise retention could delete it
+    val timeToSetInProcess = System.currentTimeMillis() - 600000L
 
     val process = EspProcessBuilder
       .id("avro-test-timestamp-flink-kafka").parallelism(1).exceptionHandler()
@@ -172,7 +173,6 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
 
     pushMessage(LongFieldV1.record, topicConfig.input)
     kafkaClient.createTopic(topicConfig.output)
-    logger.info("Created: " + kafkaClient.createConsumer(groupId = UUID.randomUUID().toString).consume(topicConfig.input, 15).head)
 
     run(process) {
       val consumer = kafkaClient.createConsumer(groupId = UUID.randomUUID().toString)
@@ -201,7 +201,8 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
         SinkOutputParamName -> s"{field: #extractedTimestamp}"
       )
 
-    val timePassedThroughKafka = 2530000L
+    //Can't be too long ago, otherwise retention could delete it
+    val timePassedThroughKafka = System.currentTimeMillis() - 120000L
     pushMessage(LongFieldV1.encodeData(-1000L), topicConfig.input, timestamp = timePassedThroughKafka)
     kafkaClient.createTopic(topicConfig.output)
     run(process) {
