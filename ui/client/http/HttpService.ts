@@ -232,7 +232,10 @@ export default {
 
   validateNode(processId, node) {
     return api.post(`/nodes/${processId}/validation`, node)
-      .catch(error => this.addError("Failed to get node validation", error, true))
+      .catch(error => {
+        this.addError("Failed to get node validation", error, true)
+        return Promise.reject(error)
+      })
   },
 
   getNodeAdditionalData(processId, node) {

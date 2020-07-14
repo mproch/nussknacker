@@ -57,6 +57,7 @@ export class NodeDetailsContent extends React.Component {
     this.parameterDefinitions = props.dynamicParameterDefinitions ? props.dynamicParameterDefinitions : nodeObjectDetails?.parameters
     const hasNoReturn = nodeObjectDetails == null || nodeObjectDetails.returnType == null
     this.showOutputVar = hasNoReturn === false || hasNoReturn === true && props.node.outputVar
+    this.isDynamicNode = nodeObjectDetails && nodeObjectDetails.isDynamicNode
   }
 
   generateUUID(...properties) {
@@ -709,6 +710,9 @@ export class NodeDetailsContent extends React.Component {
     const nodeClass = classNames("node-table", {"node-editable": this.props.isEditMode})
     const fieldErrors = this.fieldErrors(this.props.currentErrors || [])
     const otherErrors = this.props.currentErrors ? this.props.currentErrors.filter(error => !fieldErrors.includes(error)) : []
+    if (!this.props.validationPerformed && this.isDynamicNode) {
+      return (<div className={nodeClass}/>)
+    }
     return (
       <div className={nodeClass}>
         <NodeErrors errors={otherErrors} message={"Node has errors"}/>
@@ -744,6 +748,7 @@ function mapState(state, props) {
     findAvailableVariables: findAvailableVariables,
     currentErrors: state.nodeDetails.validationPerformed ? state.nodeDetails.validationErrors : props.nodeErrors,
     dynamicParameterDefinitions: state.nodeDetails.validationPerformed ? state.nodeDetails.parameters : null,
+    validationPerformed: state.nodeDetails.validationPerformed,
   }
 }
 

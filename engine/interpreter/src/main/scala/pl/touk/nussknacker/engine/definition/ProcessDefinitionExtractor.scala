@@ -60,7 +60,7 @@ object ProcessDefinitionExtractor {
       val typed = Typed.fromInstance(globalVar.value)
       val safeClass = Option(globalVar.value).map(_.getClass).getOrElse(classOf[Any])
       (varName, StandardObjectWithMethodDef(globalVar.value, MethodDefinition(varName, (_, _) => globalVar, new OrderedDependencies(List()), typed,  safeClass, List()),
-        ObjectDefinition(List(), typed, globalVar.categories, SingleNodeConfig.zero)))
+        ObjectDefinition(List(), typed, globalVar.categories, SingleNodeConfig.zero, isDynamicNode = false)))
     }
 
     val globalImportsDefs = expressionConfig.globalImports.map(_.value)

@@ -5,7 +5,8 @@ import {NodeValidationError, PropertiesType, VariableTypes, NodeType, UIParamete
 import {debounce} from "lodash"
 
 export type NodeValidationUpdated = { type: "NODE_VALIDATION_UPDATED", validationData: ValidationData}
-export type NodeDetailsActions = NodeValidationUpdated
+export type NodeValidationFailed = { type: "NODE_VALIDATION_FAILED" }
+export type NodeDetailsActions = NodeValidationUpdated | NodeValidationFailed
 
 export type ValidationData = {
     parameters? : Map<string, UIParameter>,
@@ -25,7 +26,9 @@ function nodeValidationDataUpdated(validationData: ValidationData): NodeValidati
 
 //we don't return ThunkAction here as it would not work correctly with debounce
 function validate(processId: string, request: ValidationRequest, dispatch: ThunkDispatch) {
-  HttpService.validateNode(processId, request).then(data => dispatch(nodeValidationDataUpdated(data.data)))
+  HttpService.validateNode(processId, request)
+    .then(data => dispatch(nodeValidationDataUpdated(data.data)))
+    .catch(error => dispatch({type: "NODE_VALIDATION_FAILED"}))
 }
 
 //TODO: use sth better, how long should be timeout?

@@ -98,7 +98,8 @@ object UIProcessObjects {
     val subprocessInputs = subprocessesDetails.collect {
       case SubprocessDetails(CanonicalProcess(MetaData(id, _, _, _, _), _, FlatNode(SubprocessInputDefinition(_, parameters, _)) :: _, additionalBranches), category) =>
         val typedParameters = parameters.map(extractSubprocessParam(classLoader))
-        (id, new ObjectDefinition(typedParameters, Typed[java.util.Map[String, Any]], List(category), fixedNodesConfig.getOrElse(id, SingleNodeConfig.zero)))
+        (id, new ObjectDefinition(typedParameters, Typed[java.util.Map[String, Any]], List(category), fixedNodesConfig.getOrElse(id, SingleNodeConfig.zero),
+          isDynamicNode = false))
     }.toMap
     subprocessInputs
   }
@@ -137,7 +138,8 @@ object UIProcessObjects {
 @JsonCodec(encodeOnly = true) case class UIObjectDefinition(parameters: List[UIParameter],
                               returnType: Option[TypingResult],
                               categories: List[String],
-                              nodeConfig: SingleNodeConfig) {
+                              nodeConfig: SingleNodeConfig,
+                              isDynamicNode: Boolean) {
 
   def hasNoReturn : Boolean = returnType.isEmpty
 
@@ -149,7 +151,8 @@ object UIObjectDefinition {
       parameters = objectDefinition.parameters.map(param => UIParameter(param, objectDefinition.nodeConfig.paramConfig(param.name))),
       returnType = if (objectDefinition.hasNoReturn) None else Some(objectDefinition.returnType),
       categories = objectDefinition.categories,
-      nodeConfig = objectDefinition.nodeConfig
+      nodeConfig = objectDefinition.nodeConfig,
+      isDynamicNode = objectDefinition.isDynamicNode
     )
   }
 }

@@ -6,7 +6,7 @@ import java.lang.reflect.{InvocationTargetException, Method}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.MethodToInvoke
-import pl.touk.nussknacker.engine.api.context.transformation.{GenericNodeTransformation, OutputVariableNameValue, SingleInputGenericNodeTransformation, TypedNodeDependencyValue}
+import pl.touk.nussknacker.engine.api.context.transformation.{GenericNodeTransformation, OutputVariableNameValue, TypedNodeDependencyValue}
 import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, Parameter, TypedNodeDependency, WithExplicitMethodToInvoke}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, SingleNodeConfig, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
@@ -25,12 +25,12 @@ class DefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitionExtracto
       methodDef.orderedDependencies.definedParameters,
       methodDef.returnType,
       objWithCategories.categories,
-      nodeConfig
+      nodeConfig, isDynamicNode = false
     ))
     (obj match {
       case e:GenericNodeTransformation[_] =>
         val returnType = if (e.nodeDependencies.contains(OutputVariableNameDependency)) Unknown else Typed[Void]
-        val definition = ObjectDefinition(e.initialParameters, returnType, objWithCategories.categories)
+        val definition = ObjectDefinition(e.initialParameters, returnType, objWithCategories.categories, SingleNodeConfig.zero, isDynamicNode = true)
         Right(GenericNodeTransformationMethodDef(e, definition))
       case e:WithExplicitMethodToInvoke =>
         WithExplicitMethodToInvokeMethodDefinitionExtractor.extractMethodDefinition(e,
@@ -156,7 +156,7 @@ object DefinitionExtractor {
   case class ObjectDefinition(parameters: List[Parameter],
                                          returnType: TypingResult,
                                          categories: List[String],
-                                         nodeConfig: SingleNodeConfig) extends ObjectMetadata
+                                         nodeConfig: SingleNodeConfig, isDynamicNode: Boolean) extends ObjectMetadata
 
 
   object ObjectWithMethodDef {
@@ -197,15 +197,15 @@ object DefinitionExtractor {
 
   object ObjectDefinition {
 
-    def noParam: ObjectDefinition = ObjectDefinition(List.empty, Unknown, List(), SingleNodeConfig.zero)
+    def noParam: ObjectDefinition = ObjectDefinition(List.empty, Unknown, List(), SingleNodeConfig.zero, isDynamicNode = false)
 
-    def withParams(params: List[Parameter]): ObjectDefinition = ObjectDefinition(params, Unknown, List(), SingleNodeConfig.zero)
+    def withParams(params: List[Parameter]): ObjectDefinition = ObjectDefinition(params, Unknown, List(), SingleNodeConfig.zero, isDynamicNode = false)
 
     def withParamsAndCategories(params: List[Parameter], categories: List[String]): ObjectDefinition =
-      ObjectDefinition(params, Unknown, categories, SingleNodeConfig.zero)
+      ObjectDefinition(params, Unknown, categories, SingleNodeConfig.zero, isDynamicNode = false)
 
     def apply(parameters: List[Parameter], returnType: TypingResult, categories: List[String]): ObjectDefinition = {
-      ObjectDefinition(parameters, returnType, categories, SingleNodeConfig.zero)
+      ObjectDefinition(parameters, returnType, categories, SingleNodeConfig.zero, isDynamicNode = false)
     }
   }
 
