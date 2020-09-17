@@ -22,7 +22,7 @@ import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomJoinTransformati
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.BranchEndDefinition
 import pl.touk.nussknacker.engine.process.compiler.{CompiledProcessWithDeps, FlinkProcessCompiler}
-import pl.touk.nussknacker.engine.process.typeinformation.TypeInformationDetection
+import pl.touk.nussknacker.engine.process.typeinformation.{TypeInformationDetection, TypingResultAwareTypeInformationDetection}
 import pl.touk.nussknacker.engine.process.util.StateConfiguration.RocksDBStateBackendConfig
 import pl.touk.nussknacker.engine.process.util.{MetaDataExtractor, UserClassLoader}
 import pl.touk.nussknacker.engine.process.{CheckpointConfig, ExecutionConfigPreparer, FlinkCompatibilityProvider}
