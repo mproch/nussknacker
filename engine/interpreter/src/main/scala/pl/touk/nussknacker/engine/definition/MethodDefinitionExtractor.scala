@@ -114,7 +114,7 @@ object MethodDefinitionExtractor {
       dependencies.map {
         case param: Parameter =>
           val foundParam = values.getOrElse(param.name, throw new IllegalArgumentException(s"Missing parameter: ${param.name}"))
-          validateParamType(param.name, foundParam, param)
+          //validateParamType(param.name, foundParam, param)
           foundParam
         case OutputVariableNameDependency =>
           outputVariableNameOpt.getOrElse(
@@ -122,7 +122,7 @@ object MethodDefinitionExtractor {
         case TypedNodeDependency(clazz) =>
           val foundParam = additionalDependencies.find(clazz.isInstance).getOrElse(
                       throw new IllegalArgumentException(s"Missing additional parameter of class: ${clazz.getName}"))
-          validateType(clazz.getName, foundParam, Typed(clazz))
+          //validateType(clazz.getName, foundParam, Typed(clazz))
           foundParam
       }
     }
