@@ -81,7 +81,7 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
   protected def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] = {
     //TODO: should this be configurable somehow?
     //if it's configurable, it also has to affect NodeCountMetricFunction!
-    List(LoggingListener, new NodeCountMetricListener) ++ creator.listeners(processObjectDependencies)
+    List(new NodeCountMetricListener) ++ creator.listeners(processObjectDependencies)
   }
 
   protected def signalSenders(processObjectDependencies: ProcessObjectDependencies): Map[SignalSenderKey, FlinkProcessSignalSender]

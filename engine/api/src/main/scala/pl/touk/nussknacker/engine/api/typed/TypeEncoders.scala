@@ -32,7 +32,8 @@ object TypeEncoders {
       .+:("display" -> fromString(result.display)))
 
   private def encodeSingleTypingResult(result: SingleTypingResult): JsonObject = result match {
-    case TypedObjectTypingResult(fields, objType) =>
+      //FIXME:
+    case TypedObjectTypingResult(fields, objType, _) =>
       val objTypeEncoded = encodeTypedClass(objType)
       val fieldsEncoded = "fields" -> fromFields(fields.mapValues(encodeTypingResult).toList)
       objTypeEncoded.+:(fieldsEncoded)

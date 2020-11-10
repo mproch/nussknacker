@@ -44,7 +44,8 @@ object typing {
 
   }
 
-  case class TypedObjectTypingResult(fields: Map[String, TypingResult], objType: TypedClass) extends SingleTypingResult {
+  case class TypedObjectTypingResult(fields: Map[String, TypingResult],
+                                     objType: TypedClass, additionalInfo: String = "") extends SingleTypingResult {
 
     override def display: String = fields.map { case (name, typ) => s"$name: ${typ.display}"}.mkString("{", ", ", "}")
 
