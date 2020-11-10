@@ -1,0 +1,149 @@
+{
+  "type": "record",
+  "name": "Transaction",
+  "fields": [
+    {
+      "name": "recordPrefix",
+      "type": "string"
+    },
+    {
+      "name": "recordType",
+      "type": "string"
+    },
+    {
+      "name": "startDateTime",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      }
+    },
+    {
+      "name": "amount",
+      "type": "long"
+    },
+    {
+      "name": "account",
+      "type": "string"
+    },
+    {
+      "name": "account2",
+      "type": "string"
+    },
+    {
+      "name": "channel",
+      "type": "string"
+    },
+    {
+      "name": "description",
+      "type": "string"
+    },
+    {
+      "name": "field1",
+      "type": ["string", "null"]
+    },
+    {
+      "name": "field2",
+      "type": ["string", "null"]
+    },
+    {
+      "name": "field3",
+      "type": ["string", "null"]
+    },
+    {
+      "name": "field4",
+      "type": ["string", "null"]
+    },
+    {
+      "name": "field5",
+      "type": ["string", "null"]
+    },
+    {
+      "name": "field6",
+      "type": ["string", "null"]
+    },
+    {
+      "name": "field7",
+      "type": ["string", "null"]
+    },
+    {
+      "name": "field8",
+      "type": ["string", "null"]
+    },
+    {
+      "name": "field9",
+      "type": ["string", "null"]
+    },
+    {
+      "name": "field10",
+      "type": ["string", "null"]
+    },
+    {
+      "name": "field11",
+      "type": ["string", "null"]
+    },
+    {
+      "name": "field12",
+      "type": ["string", "null"]
+    },
+    {
+      "name": "field13",
+      "type": ["string", "null"]
+    },
+    {
+      "name": "field14",
+      "type": ["string", "null"]
+    },
+    {
+      "name": "field15",
+      "type": ["string", "null"]
+    },
+    {
+      "name": "field16",
+      "type": ["string", "null"]
+    },
+    {
+      "name": "field17",
+      "type": ["string", "null"]
+    },
+    {
+      "name": "field18",
+      "type": ["string", "null"]
+    },
+    {
+      "name": "field19",
+      "type": ["string", "null"]
+    },
+    {
+      "name": "field20",
+      "type": ["string", "null"]
+    },
+    {
+      "name": "field21",
+      "type": ["string", "null"]
+    },
+    {
+      "name": "field22",
+      "type": ["string", "null"]
+    },
+    {
+      "name": "field23",
+      "type": ["string", "null"]
+    },
+    {
+      "name": "field24",
+      "type": ["string", "null"]
+    },
+    {
+      "name": "field25",
+      "type": ["string", "null"]
+    },
+    {
+      "name": "field26",
+      "type": ["string", "null"]
+    },
+    {
+      "name": "field27",
+      "type": ["string", "null"]
+    }
+  ]
+}
