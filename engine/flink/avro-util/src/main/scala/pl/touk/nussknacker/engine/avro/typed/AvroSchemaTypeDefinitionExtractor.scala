@@ -33,7 +33,7 @@ class AvroSchemaTypeDefinitionExtractor(skipOptionalFields: Boolean) {
           .map(field => field.name() -> typeDefinition(field.schema(), possibleTypes))
           .toMap
 
-        Typed(possibleTypes.map(pt => TypedObjectTypingResult(fields, pt)))
+        Typed(possibleTypes.map(pt => TypedObjectTypingResult(fields, pt, schema.toString(false))))
       }
       case Schema.Type.ENUM =>  //It's should by Union, because output can store map with string for ENUM
         Typed(Set(Typed.typedClass[EnumSymbol], Typed.typedClass[CharSequence]))

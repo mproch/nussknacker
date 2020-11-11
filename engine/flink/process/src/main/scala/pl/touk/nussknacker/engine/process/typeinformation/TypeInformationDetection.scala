@@ -1,10 +1,13 @@
 package pl.touk.nussknacker.engine.process.typeinformation
 
+import org.apache.avro.Schema
+import org.apache.avro.generic.GenericRecord
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.TypeSerializer
 import org.apache.flink.api.java.typeutils.{ListTypeInfo, MapTypeInfo}
 import org.apache.flink.api.scala.typeutils.{CaseClassTypeInfo, OptionTypeInfo, ScalaCaseClassSerializer}
+import org.apache.flink.formats.avro.typeutils.{AvroTypeInfo, GenericRecordAvroTypeInfo, LogicalTypesGenericRecordAvroTypeInfo}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.lazyy.LazyContext
 import pl.touk.nussknacker.engine.api.typed.typing._
@@ -98,6 +101,8 @@ class TypingResultAwareTypeInformationDetection(additionalTypingInfo: Set[TypeIn
       case a:TypedClass if a.klass == classOf[java.util.List[_]] => new ListTypeInfo[Any](forType(a.params.head))
       case a:TypedClass if a.klass == classOf[java.util.Map[_, _]] => new MapTypeInfo[Any, Any](forType(a.params.head), forType(a.params.last))
 
+      case a:TypedObjectTypingResult if a.objType.klass.getSimpleName == "GenericRecord" && a.additionalInfo != "" =>
+        new LogicalTypesGenericRecordAvroTypeInfo(new Schema.Parser().parse(a.additionalInfo))
       case a:TypedObjectTypingResult if a.objType.klass == classOf[Map[String, _]] =>
         TypedMapTypeInformation(a.fields.mapValuesNow(forType))
       case _ =>
@@ -143,4 +148,3 @@ class TypingResultAwareTypeInformationDetection(additionalTypingInfo: Set[TypeIn
 
 
 }
-
