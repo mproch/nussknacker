@@ -19,8 +19,8 @@ trait ProcessManager extends AutoCloseable {
 
   def findJobStatus(name: ProcessName) : Future[Option[ProcessState]]
 
-  //TODO: this is very flink specific, how can we handle that differently?
-  def savepoint(name: ProcessName, savepointDir: Option[String]): Future[SavepointResult]
+  //
+  def executeCustomAction(name: ProcessName, actionName: String, parameters: Map[String, Any], user: User): Future[Any]
 
   def processStateDefinitionManager: ProcessStateDefinitionManager
 

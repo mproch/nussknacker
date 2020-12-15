@@ -53,11 +53,17 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
     }
   }
 
-  override def savepoint(processName: ProcessName, savepointDir: Option[String]): Future[SavepointResult] = {
+
+
+
+  /*override def savepoint(processName: ProcessName, savepointDir: Option[String]): Future[SavepointResult] = {
     requireRunningProcess(processName) {
       makeSavepoint(_, savepointDir)
     }
-  }
+  } */
+
+
+  override def executeCustomAction(name: ProcessName, actionName: String, parameters: Map[String, Any], user: User): Future[Any] = ???
 
   override def stop(processName: ProcessName, savepointDir: Option[String], user: User): Future[SavepointResult] = {
     requireRunningProcess(processName) {

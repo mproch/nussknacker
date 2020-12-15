@@ -55,8 +55,8 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
         val deployRes = deployProcess(process.id, savepointPath, comment)(user)
         reply(withDeploymentInfo(process, user, DeploymentActionType.Deployment, comment, deployRes))
       }
-    case Snapshot(id, user, savepointDir) =>
-      reply(processManager(id.id)(ec, user).flatMap(_.savepoint(id.name, savepointDir)))
+    //case Snapshot(id, user, savepointDir) =>
+    //  reply(processManager(id.id)(ec, user).flatMap(_.savepoint(id.name, savepointDir)))
     case Stop(id, user, savepointDir) =>
       reply(processManager(id.id)(ec, user).flatMap(_.stop(id.name, savepointDir, toManagerUser(user))))
     case Cancel(id, user, comment) =>
