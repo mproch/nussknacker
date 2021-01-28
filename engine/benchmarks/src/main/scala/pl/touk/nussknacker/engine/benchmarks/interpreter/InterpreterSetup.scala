@@ -33,7 +33,7 @@ class InterpreterSetup[T:ClassTag] {
       failOnErrors(compiledProcess.subPartCompiler.compile(part.node, part.validationContext).result)
     val compiled = compileNode(parts.sources.head)
     (initialCtx: Context, ec: ExecutionContext) =>
-      interpreter.interpret(compiled, process.metaData, initialCtx)(ec)
+      interpreter.interpret(compiled, process.metaData, initialCtx)(ec).unsafeToFuture()
   }
 
   def compile(servicesToUse: Map[String, Service], process: EspProcess, listeners: Seq[ProcessListener]): CompiledProcess = {

@@ -143,7 +143,7 @@ object StandaloneProcessInterpreter {
       compilePartInvokers(parts).map(_.map { partsInvokers =>
         (ctx: Context, ec: ExecutionContext) => {
           implicit val iec: ExecutionContext = ec
-          compiledProcess.interpreter.interpret(node, compiledProcess.parts.metaData, ctx).flatMap { maybeResult =>
+          compiledProcess.interpreter.interpret(node, compiledProcess.parts.metaData, ctx).unsafeToFuture().flatMap { maybeResult =>
             maybeResult.fold[InterpreterOutputType](
             ir => Future.sequence(ir.map(interpretationInvoke(partsInvokers))).map(foldResults),
             a => Future.successful(Left(NonEmptyList.of(a))))

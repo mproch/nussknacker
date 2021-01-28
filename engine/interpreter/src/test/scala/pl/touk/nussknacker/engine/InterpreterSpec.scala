@@ -92,7 +92,7 @@ class InterpreterSpec extends FunSuite with Matchers {
 
     val initialCtx = Context("abc").withVariable(Interpreter.InputParamName, transaction)
 
-    val resultBeforeSink = Await.result(interpreter.interpret(compileNode(parts.sources.head), process.metaData, initialCtx), 10 seconds) match {
+    val resultBeforeSink = Await.result(interpreter.interpret(compileNode(parts.sources.head), process.metaData, initialCtx).unsafeToFuture(), 10 seconds) match {
       case Left(result) => result
       case Right(exceptionInfo) => throw exceptionInfo.throwable
     }
@@ -103,7 +103,7 @@ class InterpreterSpec extends FunSuite with Matchers {
           case sink: SinkPart if sink.id == nextPartId => sink
           case endingCustomPart: CustomNodePart if endingCustomPart.id == nextPartId => endingCustomPart
         }.get
-        Await.result(interpreter.interpret(compileNode(sink), metaData, resultBeforeSink.head.finalContext), 10 seconds).left.get.head.output
+        Await.result(interpreter.interpret(compileNode(sink), metaData, resultBeforeSink.head.finalContext).unsafeToFuture(), 10 seconds).left.get.head.output
       case _: EndReference =>
         resultBeforeSink.head.output
       case _: DeadEndReference =>

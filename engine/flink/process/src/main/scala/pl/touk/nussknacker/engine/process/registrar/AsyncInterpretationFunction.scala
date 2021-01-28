@@ -41,10 +41,10 @@ private[registrar] class AsyncInterpretationFunction(val compiledProcessWithDeps
     implicit val ec: ExecutionContext = executionContext
     try {
       interpreter.interpret(compiledNode, metaData, input)
-        .onComplete {
-          case Success(Left(result)) => collector.complete(result.asJava)
-          case Success(Right(exInfo)) => handleException(collector, exInfo)
-          case Failure(ex) =>
+        .unsafeRunAsync {
+          case Right(Left(result)) => collector.complete(result.asJava)
+          case Right(Right(exInfo)) => handleException(collector, exInfo)
+          case Left(ex) =>
             logger.warn("Unexpected error", ex)
             handleException(collector, EspExceptionInfo(None, ex, input))
         }

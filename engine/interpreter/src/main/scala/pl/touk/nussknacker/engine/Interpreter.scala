@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine
 
 import cats.data.Validated.Valid
+import cats.effect.IO
 import pl.touk.nussknacker.engine.Interpreter._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
@@ -23,24 +24,24 @@ class Interpreter private(listeners: Seq[ProcessListener], expressionEvaluator: 
   def interpret(node: Node,
                 metaData: MetaData,
                 ctx: Context)
-               (implicit executor: ExecutionContext): Future[Either[List[InterpretationResult], EspExceptionInfo[_<:Throwable]]] = {
+               (implicit executor: ExecutionContext): IO[Either[List[InterpretationResult], EspExceptionInfo[_<:Throwable]]] = {
     implicit val impMetaData = metaData
-    tryToInterpretNode(node, ctx).map(Left(_)).recover {
+    tryToInterpretNode(node, ctx).map(Left(_)).handleErrorWith {
       case ex@NodeIdExceptionWrapper(nodeId, exception) =>
         val exInfo = EspExceptionInfo(Some(nodeId), exception, ctx)
-        Right(exInfo)
+        IO.pure(Right(exInfo))
       case NonFatal(ex) =>
         val exInfo = EspExceptionInfo(None, ex, ctx)
-        Right(exInfo)
+        IO.pure(Right(exInfo))
     }
   }
 
   private def tryToInterpretNode(node: Node, ctx: Context)
-                           (implicit metaData: MetaData, executor: ExecutionContext): Future[List[InterpretationResult]] = {
+                           (implicit metaData: MetaData, executor: ExecutionContext): IO[List[InterpretationResult]] = {
     try {
-      interpretNode(node, ctx).transform(identity, transform(node.id))
+      interpretNode(node, ctx).handleErrorWith(err => IO.raiseError(transform(node.id)(err)))
     } catch {
-      case NonFatal(ex) => Future.failed(transform(node.id)(ex))
+      case NonFatal(ex) => IO.raiseError(transform(node.id)(ex))
     }
   }
 
@@ -52,7 +53,7 @@ class Interpreter private(listeners: Seq[ProcessListener], expressionEvaluator: 
   private implicit def nodeToId(implicit node: Node) : NodeId = NodeId(node.id)
 
   private def interpretNode(node: Node, ctx: Context)
-                           (implicit metaData: MetaData, executor: ExecutionContext): Future[List[InterpretationResult]] = {
+                           (implicit metaData: MetaData, executor: ExecutionContext): IO[List[InterpretationResult]] = {
     implicit val nodeImplicit: Node = node
     listeners.foreach(_.nodeEntered(node.id, ctx, metaData))
     node match {
@@ -86,7 +87,7 @@ class Interpreter private(listeners: Seq[ProcessListener], expressionEvaluator: 
         }
       case EndingProcessor(id, _, true) =>
         //FIXME: null??
-        Future.successful(List(InterpretationResult(EndReference(id), null, ctx)))
+        IO.pure(List(InterpretationResult(EndReference(id), null, ctx)))
       case Enricher(_, ref, outName, next) =>
         invoke(ref, Some(outName), ctx).flatMap {
           case ValueWithContext(out, newCtx) =>
@@ -119,7 +120,7 @@ class Interpreter private(listeners: Seq[ProcessListener], expressionEvaluator: 
             interpretOptionalNext(node, defaultNext, accCtx)
         }
       case Sink(id, _, _, true) =>
-        Future.successful(List(InterpretationResult(EndReference(id), null, ctx)))
+        IO.pure(List(InterpretationResult(EndReference(id), null, ctx)))
       case Sink(id, ref, optionalExpression, false) =>
         val valueWithModifiedContext = (optionalExpression match {
           case Some((expression, _)) =>
@@ -128,34 +129,35 @@ class Interpreter private(listeners: Seq[ProcessListener], expressionEvaluator: 
             ValueWithContext(outputValue(ctx), ctx)
         })
         listeners.foreach(_.sinkInvoked(node.id, ref, ctx, metaData, valueWithModifiedContext.value))
-        Future.successful(List(InterpretationResult(EndReference(id), valueWithModifiedContext)))
+        IO.pure(List(InterpretationResult(EndReference(id), valueWithModifiedContext)))
       case BranchEnd(e) =>
-        Future.successful(List(InterpretationResult(e.joinReference, null, ctx)))
+        IO.pure(List(InterpretationResult(e.joinReference, null, ctx)))
       case CustomNode(_, next) =>
         interpretNext(next, ctx)
       case EndingCustomNode(id) =>
-        Future.successful(List(InterpretationResult(EndReference(id), null, ctx)))
+        IO.pure(List(InterpretationResult(EndReference(id), null, ctx)))
       case SplitNode(_, nexts) =>
-        Future.sequence(nexts.map(interpretNext(_, ctx))).map(_.flatten)
+        import cats.implicits._
+        nexts.map(interpretNext(_, ctx)).sequence.map(_.flatten)
     }
   }
 
   private def interpretOptionalNext(node: Node, optionalNext: Option[Next], ctx: Context)
-                                   (implicit metaData: MetaData, ec: ExecutionContext): Future[List[InterpretationResult]] = {
+                                   (implicit metaData: MetaData, ec: ExecutionContext): IO[List[InterpretationResult]] = {
     optionalNext match {
       case Some(next) =>
         interpretNext(next, ctx)
       case None =>
         listeners.foreach(_.deadEndEncountered(node.id, ctx, metaData))
-        Future.successful(List(InterpretationResult(DeadEndReference(node.id), outputValue(ctx), ctx)))
+        IO.pure(List(InterpretationResult(DeadEndReference(node.id), outputValue(ctx), ctx)))
     }
   }
 
   private def interpretNext(next: Next, ctx: Context)
-                           (implicit metaData: MetaData, executor: ExecutionContext): Future[List[InterpretationResult]] =
+                           (implicit metaData: MetaData, executor: ExecutionContext): IO[List[InterpretationResult]] =
     next match {
       case NextNode(node) => tryToInterpretNode(node, ctx)
-      case PartRef(ref) => Future.successful(List(InterpretationResult(NextPartReference(ref), outputValue(ctx), ctx)))
+      case PartRef(ref) => IO.pure(List(InterpretationResult(NextPartReference(ref), outputValue(ctx), ctx)))
     }
 
   //hmm... is this OK?
@@ -178,14 +180,14 @@ class Interpreter private(listeners: Seq[ProcessListener], expressionEvaluator: 
   }
 
   private def invoke(ref: ServiceRef, outputVariableNameOpt: Option[String], ctx: Context)
-                    (implicit executionContext: ExecutionContext, metaData: MetaData, node: Node): Future[ValueWithContext[Any]] = {
+                    (implicit executionContext: ExecutionContext, metaData: MetaData, node: Node): IO[ValueWithContext[Any]] = {
     val (newCtx, preparedParams) = expressionEvaluator.evaluateParameters(ref.parameters, ctx)
     val resultFuture = ref.invoker.invoke(preparedParams, NodeContext(ctx.id, node.id, ref.id, outputVariableNameOpt))
     resultFuture.onComplete { result =>
       //TODO: what about implicit??
       listeners.foreach(_.serviceInvoked(node.id, ref.id, ctx, metaData, preparedParams, result))
     }
-    resultFuture.map(ValueWithContext(_, newCtx))(SynchronousExecutionContext.ctx)
+    IO.fromFuture(IO.pure(resultFuture)).map(ValueWithContext(_, newCtx))
   }
 
   private def evaluateExpression[R](expr: Expression, ctx: Context, name: String)

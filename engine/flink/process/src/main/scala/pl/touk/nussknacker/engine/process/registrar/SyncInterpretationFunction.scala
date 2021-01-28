@@ -26,7 +26,8 @@ private[registrar] class SyncInterpretationFunction(val compiledProcessWithDepsP
 
   override def flatMap(input: Context, collector: Collector[InterpretationResult]): Unit = {
     (try {
-      Await.result(interpreter.interpret(compiledNode, metaData, input), processTimeout)
+      //???
+      interpreter.interpret(compiledNode, metaData, input).unsafeRunSync()
     } catch {
       case NonFatal(error) => Right(EspExceptionInfo(None, error, input))
     }) match {
