@@ -19,7 +19,8 @@ describe("Process", () => {
     it("should import JSON and save", () => {
       cy.intercept("PUT", "/api/processes/*").as("save")
       cy.contains(/is not deployed/i).should("be.visible")
-      cy.get("#graphContainer").toMatchImageSnapshot()
+
+      //cy.get("#graphContainer").toMatchImageSnapshot()
 
       cy.intercept("POST", "/api/processes/import/*").as("import")
       cy.fixture("testProcess").then(json => {
@@ -62,7 +63,7 @@ describe("Process", () => {
       cy.get("[data-testid=modal]").should("be.visible").toMatchImageSnapshot()
     })
 
-    it("should not have \"latest deploy\" button by default", () => {
+    it.skip("should not have \"latest deploy\" button by default", () => {
       cy.viewport("macbook-15")
       cy.contains(/^deploy$/i).click()
       cy.intercept("POST", "/api/processManagement/deploy/*").as("deploy")
@@ -74,7 +75,7 @@ describe("Process", () => {
       cy.get("[data-testid=modal]").should("be.visible").toMatchImageSnapshot()
     })
 
-    it("should have \"latest deploy\" button", () => {
+    it.skip("should have \"latest deploy\" button", () => {
       window.localStorage.setItem("featureFlags", "showDeploymentsInCounts")
       cy.viewport("macbook-15")
       cy.contains(/^deploy$/i).click()
