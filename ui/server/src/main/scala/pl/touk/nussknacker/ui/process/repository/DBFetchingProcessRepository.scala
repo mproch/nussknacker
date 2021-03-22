@@ -5,9 +5,9 @@ import cats.data.OptionT
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.{DB, _}
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
-import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessId => ApiProcessId}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.ProcessType
-import pl.touk.nussknacker.restmodel.process.ProcessId
+import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.restmodel.processdetails.{ProcessShapeFetchStrategy, _}
 import pl.touk.nussknacker.ui.db.DbConfig
 import pl.touk.nussknacker.ui.db.entity._
@@ -189,7 +189,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
                                                                businessView: Boolean = false)(implicit loggedUser: LoggedUser): BaseProcessDetails[PS] = {
     BaseProcessDetails[PS](
       id = process.name, //TODO: replace by Long / ProcessId
-      processId = ApiProcessId(process.id), //TODO: Remove it weh we will support Long / ProcessId
+      processId = ProcessId(process.id), //TODO: Remove it weh we will support Long / ProcessId
       name = process.name,
       processVersionId = processVersion.id,
       isLatestVersion = isLatestVersion,

@@ -3,8 +3,7 @@ package pl.touk.nussknacker.ui.process.repository
 import java.sql.Timestamp
 
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
-import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.restmodel.process.ProcessId
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.restmodel.processdetails.{ProcessAction, ProcessVersion, ProcessShapeFetchStrategy}
 import pl.touk.nussknacker.ui.app.BuildInfo
 import pl.touk.nussknacker.ui.db.EspTables
