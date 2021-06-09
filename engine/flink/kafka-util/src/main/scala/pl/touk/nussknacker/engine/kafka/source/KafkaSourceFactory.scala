@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.kafka._
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.context.transformation.{BaseDefinedParameter, DefinedEagerParameter, DefinedSingleParameter, NodeDependencyValue, SingleInputGenericNodeTransformation}
+import pl.touk.nussknacker.engine.api.context.transformation.{BaseDefinedParameter, DefinedEagerParameter, DefinedSingleParameter, FailedToDefineParameter, NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceFactoryState
@@ -62,14 +62,22 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
   }
 
   protected def nextSteps(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {
-    case step@TransformationStep((KafkaSourceFactory.TopicParamName, DefinedEagerParameter(topic: String, _)) :: tailParams, None) =>
-      val topics = topic.split(topicNameSeparator).map(_.trim).toList
-      val preparedTopics = topics.map(KafkaUtils.prepareKafkaTopic(_, processObjectDependencies)).map(_.prepared)
-      val topicValidationErrors = validateTopics(preparedTopics).swap.toList.map(_.toCustomNodeError(nodeId.id, Some(KafkaSourceFactory.TopicParamName)))
+    case step@TransformationStep((KafkaSourceFactory.TopicParamName, definedTopicParam) :: _, None) =>
+
+      val topicErrors = definedTopicParam match {
+        case DefinedEagerParameter(value, expression) =>
+          val param = topicParameter.parameter
+          //TODO: this should be handle automatically with GenericNodeTransformationValidator?
+          val validatorErrors = param.validators.flatMap(_.isValid(param.name, expression.expression.original, None).swap.toList)
+          val preparedTopics = Option(value).toList.flatMap(_.toString.split(topicNameSeparator).map(_.trim))
+          val topicValidationErrors = validateTopics(preparedTopics).swap.toList.map(_.toCustomNodeError(nodeId.id, Some(KafkaSourceFactory.TopicParamName)))
+          validatorErrors ++ topicValidationErrors
+        case FailedToDefineParameter => Nil
+      }
       val kafkaContextInitializer = prepareContextInitializer(step.parameters)
       FinalResults(
         finalContext = kafkaContextInitializer.validationContext(context, dependencies, step.parameters),
-        errors = topicValidationErrors,
+        errors = topicErrors,
         state = Some(KafkaSourceFactoryState(kafkaContextInitializer)))
   }
 
